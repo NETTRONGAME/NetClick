@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Кликер</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>💎</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; font-family: -apple-system, sans-serif; color: #fff; min-height: 100vh; -webkit-tap-highlight-color: transparent; user-select: none; overflow-x: hidden; display: flex; justify-content: center; }
+        body.theme-light { background: #f0f0f0; color: #000; }
+        body.theme-neon { background: #0a0a2e; color: #0ff; }
+        .app { max-width: 420px; width: 100%; padding: 20px; padding-bottom: 40px; }
+        .profile-info { text-align: center; padding: 10px; background: #1a1a1a; border-radius: 12px; cursor: pointer; margin-bottom: 10px; }
+        body.theme-light .profile-info { background: #fff; }
+        body.theme-neon .profile-info { background: #1a1a3e; }
+        .profile-nick { font-size: 18px; font-weight: 700; }
+        .profile-level { font-size: 12px; color: #888; }
+        .rebirth-badge { display: inline-block; background: linear-gradient(135deg, #ff6600, #ffaa00); color: #000; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+        .score { font-size: 48px; font-weight: 800; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; transition: transform 0.15s; }
+        .score.pop { transform: scale(1.15); }
+        .per-second { font-size: 14px; color: #888; text-align: center; }
+        .combo-bar { text-align: center; min-height: 20px; }
+        .combo-text { font-size: 13px; font-weight: 700; color: #ff6600; }
+        .stats-bar { display: flex; gap: 8px; margin: 15px 0; }
+        .stat { flex: 1; background: #1a1a1a; border-radius: 12px; padding: 10px; text-align: center; }
+        body.theme-light .stat { background: #fff; }
+        body.theme-neon .stat { background: #1a1a3e; }
+        .stat-value { font-size: 16px; font-weight: 700; color: #667eea; }
+        .stat-label { font-size: 10px; color: #888; }
+        .clicker-area { display: flex; justify-content: center; align-items: center; padding: 20px 0; position: relative; }
+        #clickButton { width: 150px; height: 150px; border-radius: 50%; border: none; font-size: 55px; background: linear-gradient(145deg, #2a2a2a, #1a1a1a); box-shadow: 0 0 30px rgba(102,126,234,0.4), 0 0 60px rgba(102,126,234,0.2); cursor: pointer; transition: transform 0.1s, box-shadow 0.15s; }
+        #clickButton:active { transform: scale(0.85); box-shadow: 0 0 80px rgba(102,126,234,0.9); }
+        body.theme-neon #clickButton { box-shadow: 0 0 30px rgba(0,255,255,0.4); }
+        .float-text { position: absolute; font-size: 22px; font-weight: 800; color: #667eea; pointer-events: none; z-index: 20; animation: floatUp 0.9s ease-out forwards; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-100px) scale(0.8); } }
+        .tabs-row { display: flex; gap: 4px; background: #1a1a1a; border-radius: 14px; padding: 5px; justify-content: center; flex-wrap: wrap; margin: 15px 0; }
+        body.theme-light .tabs-row { background: #e0e0e0; }
+        body.theme-neon .tabs-row { background: #1a1a3e; }
+        .tab { width: 40px; height: 40px; border-radius: 10px; border: none; background: transparent; color: #888; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .tab.active { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; box-shadow: 0 0 12px rgba(102,126,234,0.5); }
+        .shop-item { background: #1a1a1a; border-radius: 14px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        body.theme-light .shop-item { background: #fff; }
+        body.theme-neon .shop-item { background: #1a1a3e; }
+        .item-info { flex: 1; }
+        .item-name { font-size: 15px; font-weight: 600; }
+        .item-desc { font-size: 11px; color: #888; }
+        .item-cost { font-size: 10px; color: #667eea; margin-top: 4px; }
+        .btn { padding: 10px 16px; border-radius: 20px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; color: #fff; white-space: nowrap; }
+        .btn-buy { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .btn-buy.locked { background: #333; color: #666; }
+        .btn-potion { background: linear-gradient(135deg, #ff8800, #ffaa00); color: #000; }
+        .btn-potion.locked { background: #333; color: #666; }
+        .btn-potion.active { background: #44ff44 !important; color: #000 !important; animation: glowPulse 1s infinite; }
+        @keyframes glowPulse { 0%,100% { box-shadow: 0 0 10px #44ff44; } 50% { box-shadow: 0 0 25px #44ff44; } }
+        .btn-rebirth { padding: 12px 20px; border-radius: 20px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #ff4444, #ff8800); color: #fff; margin-top: 10px; width: 100%; }
+        .btn-rebirth.locked { background: #333; color: #666; }
+        .btn-daily { padding: 12px 20px; border-radius: 20px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #ffaa00, #ffdd00); color: #000; width: 100%; }
+        .btn-daily.claimed { background: #333; color: #666; }
+        .skin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+        .skin-btn { width: 100%; aspect-ratio: 1; border-radius: 15px; border: 2px solid #333; background: #1a1a1a; font-size: 28px; cursor: pointer; }
+        .skin-btn.active { border-color: #667eea; box-shadow: 0 0 15px rgba(102,126,234,0.5); }
+        .skin-btn.locked { opacity: 0.3; }
+        .theme-btn { padding: 8px 12px; border-radius: 10px; border: 1px solid #444; background: #1a1a1a; color: #fff; cursor: pointer; font-size: 12px; margin: 2px; }
+        .theme-btn.active { border-color: #667eea; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .msg { text-align: center; padding: 8px; font-size: 13px; color: #667eea; min-height: 20px; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; }
+        .overlay.show { display: flex; }
+        .modal { background: #1a1a1a; border-radius: 20px; padding: 20px; width: 90%; max-width: 350px; border: 1px solid #333; }
+        .modal h3 { margin-bottom: 12px; }
+        .modal textarea { width: 100%; height: 80px; background: #111; color: #fff; border: 1px solid #333; border-radius: 10px; padding: 10px; font-size: 11px; resize: none; margin-bottom: 10px; }
+        .modal input { width: 100%; padding: 10px; background: #111; color: #fff; border: 1px solid #333; border-radius: 10px; font-size: 14px; margin-bottom: 10px; }
+        .modal .btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .daily-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; }
+        .daily-popup.show { display: flex; }
+        .daily-card { background: #1a1a1a; border-radius: 24px; padding: 30px; text-align: center; border: 2px solid #ffaa00; }
+        .daily-reward { font-size: 40px; font-weight: 800; color: #ffaa00; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="daily-popup" id="dailyPopup">
+        <div class="daily-card">
+            <div style="font-size:60px;">🎁</div>
+            <div style="font-size:20px;font-weight:700;margin:10px 0;">Ежедневный бонус!</div>
+            <div class="daily-reward" id="dailyReward"></div>
+            <button class="btn-daily" id="dailyCollectBtn" style="width:auto;padding:14px 40px;margin-top:10px;">Забрать!</button>
+        </div>
+    </div>
+
+    <div class="app">
+        <div class="profile-info" id="profileBar">
+            <div><span class="profile-nick" id="profileNick">Игрок</span><span class="rebirth-badge" id="rebirthBadge" style="display:none">⭐<span id="rebirthCount">0</span></span></div>
+            <div class="profile-level" id="profileLevel">Уровень 1</div>
+        </div>
+        <div class="score" id="score">0</div>
+        <div class="per-second" id="perSecond">0/сек</div>
+        <div class="combo-bar"><span class="combo-text" id="comboText"></span></div>
+        <div class="stats-bar">
+            <div class="stat"><div class="stat-value" id="clickPower">1</div><div class="stat-label">Сила</div></div>
+            <div class="stat"><div class="stat-value" id="multiplierDisplay">x1</div><div class="stat-label">Множ</div></div>
+            <div class="stat"><div class="stat-value" id="totalEarned">0</div><div class="stat-label">Всего</div></div>
+        </div>
+        <div class="clicker-area" id="clickerArea"><button id="clickButton">💎</button></div>
+        <div class="tabs-row">
+            <button class="tab active" id="tabShop">🏪</button>
+            <button class="tab" id="tabPotions">🧪</button>
+            <button class="tab" id="tabRebirth">🔄</button>
+            <button class="tab" id="tabDaily">🎁</button>
+            <button class="tab" id="tabSkins">🎨</button>
+            <button class="tab" id="tabAch">🏆</button>
+            <button class="tab" id="tabProfile">👤</button>
+        </div>
+        <div class="section active" id="shopSection"></div>
+        <div class="section" id="potionsSection"></div>
+        <div class="section" id="rebirthSection"></div>
+        <div class="section" id="dailySection"></div>
+        <div class="section" id="skinsSection"></div>
+        <div class="section" id="achSection"></div>
+        <div class="section" id="profileSection"></div>
+        <div class="msg" id="message"></div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
+            <button class="btn btn-buy" id="saveBtn">💾 Сохранить</button>
+            <button class="btn btn-buy" id="loadBtn" style="background:#333;">📂 Загрузить</button>
+            <button class="btn" style="background:#333;" id="resetBtn">🔄 Сброс</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="saveOverlay"><div class="modal"><h3>💾 Сохранение</h3><textarea id="saveCodeText" readonly></textarea><div class="btn-row"><button class="btn btn-buy" id="copySaveBtn">📋 Копировать</button><button class="btn" style="background:#333;color:#fff;" id="closeSaveBtn">✕</button></div></div></div>
+    <div class="overlay" id="loadOverlay"><div class="modal"><h3>📂 Загрузка</h3><textarea id="loadCodeText" placeholder="Вставьте код..."></textarea><div class="btn-row"><button class="btn btn-buy" id="confirmLoadBtn">✅ Загрузить</button><button class="btn" style="background:#333;color:#fff;" id="closeLoadBtn">✕</button></div></div></div>
+    <div class="overlay" id="resetOverlay"><div class="modal"><h3>⚠️ Сброс</h3><p style="color:#888;">Точно?</p><div class="btn-row"><button class="btn" style="background:#ff3b30;color:#fff;" id="confirmResetBtn">Да</button><button class="btn" style="background:#333;color:#fff;" id="closeResetBtn">Нет</button></div></div></div>
+    <div class="overlay" id="nickOverlay"><div class="modal"><h3>👤 Ник</h3><input type="text" id="nickInput" maxlength="16"><div class="btn-row"><button class="btn btn-buy" id="confirmNickBtn">✅</button><button class="btn" style="background:#333;color:#fff;" id="closeNickBtn">✕</button></div></div></div>
+
+    <script>
+        // === СОСТОЯНИЕ ===
+        var coins=0,clickPower=1,multiplier=1,coinsPerSecond=0,totalEarned=0,totalClicks=0,playerNick='Игрок';
+        var rebirths=0,rebirthBonus=0,comboTimer=0,comboCount=0,comboMult=1;
+        var lastDaily='',dailyStreak=0,currentSkin='💎',unlockedSkins=['💎'];
+        var allSkins=['💎','💰','🔥','⭐','🌟','🎯','👑','💀','❤️','🎪','🔮'];
+        var currentTheme='dark';
+
+        var potions={
+            clickBoost:{name:'⚡ Зелье клика',desc:'x2 сила клика на 30 сек',baseCost:100,active:false,timer:0,duration:30},
+            autoBoost:{name:'⏱ Зелье скорости',desc:'x2 автодоход на 30 сек',baseCost:200,active:false,timer:0,duration:30},
+            coinRain:{name:'💰 Зелье богатства',desc:'x3 все монеты на 15 сек',baseCost:500,active:false,timer:0,duration:15}
+        };
+
+        var shopItems=[
+            {name:'Усиленный клик',desc:'+1 к силе',cost:10,owned:0,bonus:1,type:'click'},
+            {name:'Авто-сборщик',desc:'+1/сек',cost:50,owned:0,bonus:1,type:'auto'},
+            {name:'Множитель x2',desc:'Удваивает доход',cost:200,owned:0,bonus:1,type:'multi'},
+            {name:'Супер-клик',desc:'+10 к силе',cost:500,owned:0,bonus:10,type:'click'},
+            {name:'Мега-ферма',desc:'+10/сек',cost:2000,owned:0,bonus:10,type:'auto'}
+        ];
+
+        function msg(t){var m=document.getElementById('message');m.textContent=t;clearTimeout(m._t);m._t=setTimeout(function(){m.textContent='';},3000);}
+        function getLevel(){var l=1,t=100,r=totalEarned;while(r>=t){r-=t;l++;t=Math.floor(t*1.5);}return l;}
+        function getPotionCost(p){return Math.floor(p.baseCost*(1+(getLevel()-1)*0.2)*(1+rebirths*0.5));}
+        function getRebirthReq(){return Math.floor(10000*Math.pow(2,rebirths));}
+        function getEffClick(){var p=clickPower;if(potions.clickBoost.active)p*=2;return p;}
+        function getEffCPS(){var c=coinsPerSecond;if(potions.autoBoost.active)c*=2;return c;}
+        function getEffMult(){var m=multiplier*comboMult;if(potions.coinRain.active)m*=3;return m;}
+
+        function applyTheme(){document.body.className='theme-'+currentTheme;}
+
+        function getSaveString(){
+            var data={coins:Math.floor(coins),clickPower:clickPower,multiplier:multiplier,coinsPerSecond:coinsPerSecond,totalEarned:Math.floor(totalEarned),totalClicks:totalClicks,playerNick:playerNick,rebirths:rebirths,rebirthBonus:rebirthBonus,lastDaily:lastDaily,dailyStreak:dailyStreak,unlockedSkins:unlockedSkins,currentSkin:currentSkin,currentTheme:currentTheme,items:[]};
+            for(var i=0;i<shopItems.length;i++)data.items.push(shopItems[i].owned);
+            return JSON.stringify(data);
+        }
+
+        function loadFromString(str){
+            if(!str||str.trim()==='')return false;
+            try{
+                var data=JSON.parse(str.trim());
+                if(typeof data.coins!=='number')return false;
+                coins=data.coins;clickPower=data.clickPower||1;multiplier=data.multiplier||1;
+                coinsPerSecond=data.coinsPerSecond||0;totalEarned=data.totalEarned||0;
+                totalClicks=data.totalClicks||0;playerNick=data.playerNick||'Игрок';
+                rebirths=data.rebirths||0;rebirthBonus=data.rebirthBonus||0;
+                lastDaily=data.lastDaily||'';dailyStreak=data.dailyStreak||0;
+                unlockedSkins=data.unlockedSkins||['💎'];currentSkin=data.currentSkin||'💎';
+                currentTheme=data.currentTheme||'dark';
+                if(data.items)for(var i=0;i<data.items.length;i++)if(shopItems[i])shopItems[i].owned=data.items[i];
+                applyTheme();
+                document.getElementById('clickButton').textContent=currentSkin;
+                saveToStorage();
+                return true;
+            }catch(e){return false;}
+        }
+
+        function saveToStorage(){
+            try{localStorage.setItem('clicker_save',getSaveString());}catch(e){}
+        }
+
+        function loadFromStorage(){
+            try{
+                var d=localStorage.getItem('clicker_save');
+                if(d)loadFromString(d);
+            }catch(e){}
+        }
+
+        function hideAll(){
+            var ids=['saveOverlay','loadOverlay','resetOverlay','nickOverlay'];
+            for(var i=0;i<ids.length;i++)document.getElementById(ids[i]).classList.remove('show');
+        }
+
+        function doReset(){
+            if(!confirm('Сбросить ВЕСЬ прогресс?'))return;
+            coins=0;clickPower=1;multiplier=1;coinsPerSecond=0;totalEarned=0;totalClicks=0;playerNick='Игрок';
+            rebirths=0;rebirthBonus=0;lastDaily='';dailyStreak=0;
+            unlockedSkins=['💎'];currentSkin='💎';currentTheme='dark';comboCount=0;comboMult=1;
+            for(var i=0;i<shopItems.length;i++)shopItems[i].owned=0;
+            for(var k in potions){potions[k].active=false;potions[k].timer=0;}
+            hideAll();applyTheme();
+            document.getElementById('clickButton').textContent='💎';
+            try{localStorage.removeItem('clicker_save');}catch(e){}
+            updateUI();msg('Сброшено');
+        }
+
+        function doRebirth(){
+            var req=getRebirthReq();
+            if(coins<req){msg('Нужно '+req+' монет');return;}
+            coins=0;clickPower=1;coinsPerSecond=0;totalEarned=0;totalClicks=0;
+            for(var i=0;i<shopItems.length;i++)shopItems[i].owned=0;
+            for(var k in potions){potions[k].active=false;potions[k].timer=0;}
+            rebirths++;rebirthBonus+=0.5;multiplier=1+rebirthBonus;comboCount=0;comboMult=1;
+            if(rebirths%2===0)unlockSkin();
+            saveToStorage();
+            updateUI();msg('Перерождение '+rebirths+'!');
+        }
+
+        function unlockSkin(){
+            var locked=[];
+            for(var i=0;i<allSkins.length;i++){
+                if(unlockedSkins.indexOf(allSkins[i])===-1)locked.push(allSkins[i]);
+            }
+            if(locked.length>0){
+                var skin=locked[Math.floor(Math.random()*locked.length)];
+                unlockedSkins.push(skin);
+                msg('Новый скин: '+skin+'!');
+            }
+        }
+
+        function checkDaily(){
+            var today=new Date().toDateString();
+            if(lastDaily===today)return;
+            if(lastDaily===''){dailyStreak=1;}
+            else{
+                var yesterday=new Date(Date.now()-86400000).toDateString();
+                if(lastDaily===yesterday)dailyStreak++;else dailyStreak=1;
+            }
+            var reward=50*dailyStreak*(1+rebirths);
+            document.getElementById('dailyReward').textContent='+'+reward+' 💰';
+            document.getElementById('dailyPopup').classList.add('show');
+            document.getElementById('dailyCollectBtn').onclick=function(){
+                coins+=reward;totalEarned+=reward;
+                lastDaily=today;
+                document.getElementById('dailyPopup').classList.remove('show');
+                saveToStorage();
+                updateUI();msg('+'+reward+' монет!');
+            };
+        }
+
+        function updateUI(){
+            document.getElementById('score').textContent=Math.floor(coins);
+            document.getElementById('perSecond').textContent=(getEffCPS()*getEffMult()).toFixed(1)+'/сек';
+            document.getElementById('clickPower').textContent=getEffClick();
+            document.getElementById('multiplierDisplay').textContent='x'+getEffMult().toFixed(1);
+            document.getElementById('totalEarned').textContent=Math.floor(totalEarned);
+            document.getElementById('profileNick').textContent=playerNick;
+            document.getElementById('profileLevel').textContent='Уровень '+getLevel();
+
+            if(comboMult>1){
+                document.getElementById('comboText').textContent='Комбо x'+comboCount+' (x'+comboMult.toFixed(1)+')';
+            }else{document.getElementById('comboText').textContent='';}
+
+            if(rebirths>0){
+                document.getElementById('rebirthBadge').style.display='inline-block';
+                document.getElementById('rebirthCount').textContent=rebirths;
+            }else{document.getElementById('rebirthBadge').style.display='none';}
+
+            var h='';
+            for(var i=0;i<shopItems.length;i++){
+                var item=shopItems[i];
+                var cost=Math.floor(item.cost*Math.pow(1.5+i*0.2,item.owned));
+                h+='<div class="shop-item"><div class="item-info"><div class="item-name">'+item.name+' ('+item.owned+')</div><div class="item-desc">'+item.desc+'</div><div class="item-cost">💰 '+cost+'</div></div><button class="btn btn-buy'+(coins>=cost?'':' locked')+'" data-idx="'+i+'">Купить</button></div>';
+            }
+            document.getElementById('shopSection').innerHTML=h;
+            var btns=document.querySelectorAll('#shopSection .btn-buy');
+            for(var j=0;j<btns.length;j++){
+                btns[j].onclick=function(){
+                    var idx=parseInt(this.getAttribute('data-idx'));
+                    var item=shopItems[idx];
+                    var cost=Math.floor(item.cost*Math.pow(1.5+idx*0.2,item.owned));
+                    if(coins<cost)return;
+                    coins-=cost;item.owned++;
+                    if(item.type==='click')clickPower+=item.bonus;
+                    if(item.type==='auto')coinsPerSecond+=item.bonus;
+                    if(item.type==='multi')multiplier+=item.bonus;
+                    saveToStorage();
+                    updateUI();
+                };
+            }
+
+            var ph='';
+            for(var k in potions){
+                var p=potions[k];
+                var cost=getPotionCost(p);
+                var cls='btn btn-potion',txt='💰 '+cost;
+                if(p.active){cls+=' active';txt='Активно '+Math.ceil(p.timer)+'с';}
+                else if(coins<cost)cls+=' locked';
+                ph+='<div class="shop-item"><div class="item-info"><div class="item-name">'+p.name+'</div><div class="item-desc">'+p.desc+'</div></div><button class="'+cls+'" data-p="'+k+'">'+txt+'</button></div>';
+            }
+            document.getElementById('potionsSection').innerHTML=ph;
+            var pbtns=document.querySelectorAll('#potionsSection .btn-potion');
+            for(var pj=0;pj<pbtns.length;pj++){
+                pbtns[pj].onclick=function(){
+                    var key=this.getAttribute('data-p'),potion=potions[key],cost=getPotionCost(potion);
+                    if(potion.active||coins<cost)return;
+                    coins-=cost;potion.active=true;potion.timer=potion.duration;
+                    saveToStorage();
+                    updateUI();
+                };
+            }
+
+            var req=getRebirthReq();
+            document.getElementById('rebirthSection').innerHTML='<div style="text-align:center;padding:20px;"><div style="font-size:50px;">🔄</div><div style="font-size:18px;font-weight:700;">Перерождение</div><div style="color:#888;">Сбрасывает прогресс, даёт бонус</div><div style="background:#1a1a1a;border-radius:10px;padding:15px;margin:10px 0;"><div>Бонус: <b style="color:#ffaa00;">x'+(1+rebirthBonus).toFixed(1)+'</b></div><div>Нужно: <b style="color:#ff6600;">'+req+' 💰</b></div></div><button class="btn-rebirth'+(coins>=req?'':' locked')+'" id="rebirthDoBtn">Переродиться</button></div>';
+            var rb=document.getElementById('rebirthDoBtn');if(rb)rb.onclick=doRebirth;
+
+            var today=new Date().toDateString();
+            document.getElementById('dailySection').innerHTML='<div style="text-align:center;padding:20px;"><div style="font-size:50px;">🎁</div><div style="font-size:18px;font-weight:700;">Ежедневный бонус</div><div style="color:#888;">День '+dailyStreak+'</div><div style="font-size:24px;color:#ffaa00;">+'+50*dailyStreak*(1+rebirths)+' 💰</div><button class="btn-daily'+(lastDaily===today?' claimed':'')+'" id="dailyClaimBtn">'+(lastDaily===today?'Получено':'Забрать')+'</button></div>';
+            var db=document.getElementById('dailyClaimBtn');
+            if(db&&lastDaily!==today)db.onclick=function(){
+                var reward=50*dailyStreak*(1+rebirths);
+                coins+=reward;totalEarned+=reward;
+                lastDaily=today;saveToStorage();updateUI();msg('+'+reward+'!');
+            };
+
+            var sh='<div style="text-align:center;padding:10px;"><div style="font-weight:700;margin-bottom:8px;">Скины</div><div class="skin-grid">';
+            for(var si=0;si<allSkins.length;si++){
+                var skin=allSkins[si],unlocked=unlockedSkins.indexOf(skin)!==-1;
+                sh+='<button class="skin-btn'+(skin===currentSkin?' active':'')+(!unlocked?' locked':'')+'" data-skin="'+skin+'"'+(unlocked?'':' disabled')+'>'+skin+'</button>';
+            }
+            sh+='</div><div style="margin-top:12px;"><div style="font-weight:700;margin-bottom:6px;">Тема</div>';
+            sh+='<button class="theme-btn'+(currentTheme==='dark'?' active':'')+'" data-theme="dark">🌙</button>';
+            sh+='<button class="theme-btn'+(currentTheme==='light'?' active':'')+'" data-theme="light">☀️</button>';
+            sh+='<button class="theme-btn'+(currentTheme==='neon'?' active':'')+'" data-theme="neon">💜</button></div></div>';
+            document.getElementById('skinsSection').innerHTML=sh;
+
+            var sbtns=document.querySelectorAll('#skinsSection .skin-btn:not([disabled])');
+            for(var sj=0;sj<sbtns.length;sj++){
+                sbtns[sj].onclick=function(){
+                    currentSkin=this.getAttribute('data-skin');
+                    document.getElementById('clickButton').textContent=currentSkin;
+                    saveToStorage();
+                    updateUI();
+                };
+            }
+            var tbtns=document.querySelectorAll('#skinsSection .theme-btn');
+            for(var tj=0;tj<tbtns.length;tj++){
+                tbtns[tj].onclick=function(){
+                    currentTheme=this.getAttribute('data-theme');
+                    applyTheme();
+                    saveToStorage();
+                    updateUI();
+                };
+            }
+        }
+
+        // === ОБРАБОТЧИКИ ===
+        document.getElementById('clickButton').onclick=function(e){
+            comboCount++;comboTimer=1.5;
+            if(comboCount>=100)comboMult=5;
+            else if(comboCount>=50)comboMult=3;
+            else if(comboCount>=20)comboMult=2;
+            else if(comboCount>=10)comboMult=1.5;
+            else comboMult=1;
+            var earned=getEffClick()*getEffMult();
+            coins+=earned;totalEarned+=earned;totalClicks++;
+            var rect=e.target.getBoundingClientRect();
+            var el=document.createElement('div');el.className='float-text';el.textContent='+'+earned.toFixed(0);
+            el.style.left=(e.clientX-rect.left-25)+'px';el.style.top=(e.clientY-rect.top-50)+'px';
+            document.getElementById('clickerArea').appendChild(el);
+            setTimeout(function(){el.remove();},900);
+            updateUI();
+        };
+
+        document.getElementById('profileBar').onclick=function(){
+            hideAll();document.getElementById('nickInput').value=playerNick;
+            document.getElementById('nickOverlay').classList.add('show');
+        };
+
+        function switchTab(t){
+            var tabs=['tabShop','tabPotions','tabRebirth','tabDaily','tabSkins','tabAch','tabProfile'];
+            var secs=['shopSection','potionsSection','rebirthSection','dailySection','skinsSection','achSection','profileSection'];
+            var map={shop:0,potions:1,rebirth:2,daily:3,skins:4,ach:5,profile:6};
+            for(var i=0;i<tabs.length;i++){
+                document.getElementById(tabs[i]).classList.remove('active');
+                document.getElementById(secs[i]).classList.remove('active');
+            }
+            var idx=map[t]!==undefined?map[t]:0;
+            document.getElementById(tabs[idx]).classList.add('active');
+            document.getElementById(secs[idx]).classList.add('active');
+            if(t==='ach'){
+                document.getElementById('achSection').innerHTML='<div style="text-align:center;padding:40px;color:#888;"><div style="font-size:50px;">🏆</div><div>Кликов: '+totalClicks+'</div><div>Монет: '+Math.floor(totalEarned)+'</div><div>Перерождений: '+rebirths+'</div></div>';
+            }else if(t==='profile'){
+                document.getElementById('profileSection').innerHTML='<div style="text-align:center;padding:20px;"><div style="font-size:60px;">👤</div><div style="font-size:20px;">'+playerNick+'</div><div style="color:#888;">Ур.'+getLevel()+'</div><div style="display:flex;gap:10px;margin:20px 0;justify-content:center;"><div style="background:#1a1a1a;border-radius:10px;padding:12px;flex:1;max-width:120px;"><div style="color:#667eea;font-weight:700;">'+totalClicks+'</div><div style="font-size:10px;color:#888;">Кликов</div></div><div style="background:#1a1a1a;border-radius:10px;padding:12px;flex:1;max-width:120px;"><div style="color:#667eea;font-weight:700;">'+Math.floor(totalEarned)+'</div><div style="font-size:10px;color:#888;">Монет</div></div></div><button id="changeNickBtn" class="btn btn-buy" style="margin-top:10px;">✏️ Сменить ник</button></div>';
+                var nb=document.getElementById('changeNickBtn');
+                if(nb)nb.onclick=function(){hideAll();document.getElementById('nickInput').value=playerNick;document.getElementById('nickOverlay').classList.add('show');};
+            }
+            updateUI();
+        }
+
+        document.getElementById('tabShop').onclick=function(){switchTab('shop');};
+        document.getElementById('tabPotions').onclick=function(){switchTab('potions');};
+        document.getElementById('tabRebirth').onclick=function(){switchTab('rebirth');};
+        document.getElementById('tabDaily').onclick=function(){switchTab('daily');};
+        document.getElementById('tabSkins').onclick=function(){switchTab('skins');};
+        document.getElementById('tabAch').onclick=function(){switchTab('ach');};
+        document.getElementById('tabProfile').onclick=function(){switchTab('profile');};
+        document.getElementById('saveBtn').onclick=function(){hideAll();document.getElementById('saveCodeText').value=getSaveString();document.getElementById('saveOverlay').classList.add('show');};
+        document.getElementById('loadBtn').onclick=function(){hideAll();document.getElementById('loadCodeText').value='';document.getElementById('loadOverlay').classList.add('show');};
+        document.getElementById('resetBtn').onclick=function(){hideAll();document.getElementById('resetOverlay').classList.add('show');};
+        document.getElementById('copySaveBtn').onclick=function(){document.getElementById('saveCodeText').select();document.execCommand('copy');msg('Скопировано');};
+        document.getElementById('closeSaveBtn').onclick=hideAll;
+        document.getElementById('confirmLoadBtn').onclick=function(){
+            var c=document.getElementById('loadCodeText').value;
+            if(c&&loadFromString(c)){hideAll();updateUI();msg('Загружено!');}else msg('Ошибка');
+        };
+        document.getElementById('closeLoadBtn').onclick=hideAll;
+        document.getElementById('confirmResetBtn').onclick=doReset;
+        document.getElementById('closeResetBtn').onclick=hideAll;
+        document.getElementById('confirmNickBtn').onclick=function(){
+            var n=document.getElementById('nickInput').value.trim();
+            if(n){playerNick=n;hideAll();saveToStorage();updateUI();msg('Ник: '+n);}
+        };
+        document.getElementById('closeNickBtn').onclick=hideAll;
+
+        setInterval(function(){
+            if(comboTimer>0){comboTimer-=0.1;if(comboTimer<=0){comboCount=0;comboMult=1;updateUI();}}
+        },100);
+
+        setInterval(function(){
+            var changed=false;
+            for(var k in potions){
+                if(potions[k].active){potions[k].timer-=1;if(potions[k].timer<=0){potions[k].active=false;potions[k].timer=0;changed=true;}}
+            }
+            if(changed)updateUI();
+        },1000);
+
+        setInterval(function(){
+            if(coinsPerSecond>0){coins+=getEffCPS()*getEffMult();totalEarned+=getEffCPS()*getEffMult();updateUI();}
+        },1000);
+
+        setInterval(saveToStorage,10000);
+
+        loadFromStorage();
+        checkDaily();
+        updateUI();
+    </script>
+</body>
+</html>
