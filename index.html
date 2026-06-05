@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>TXT to HTML - Routenote Convert</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NetClicker</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>💎</text></svg>">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        html,body{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+        body{background:#0a0a0a;font-family:-apple-system,sans-serif;color:#fff;min-height:100vh;overflow-x:hidden;display:flex;justify-content:center;transition:background 0.5s}
+        body.theme-light{background:#f0f0f0;color:#000}
+        body.theme-neon{background:#0a0a2e;color:#0ff}
+        .app{max-width:420px;width:100%;padding:20px}
+        .top-bar{display:flex;justify-content:center;align-items:center;gap:8px;padding:10px;background:#1a1a1a;border-radius:12px;margin-bottom:10px;font-size:13px;flex-wrap:wrap}
+        body.theme-light .top-bar{background:#fff}
+        .top-bar button{background:#667eea;color:#fff;border:none;padding:8px 14px;border-radius:15px;font-size:12px;cursor:pointer}
+        .admin-btn{background:#ff4444!important}
+        .profile-info{text-align:center;padding:10px;background:#1a1a1a;border-radius:12px;cursor:pointer;margin-bottom:10px}
+        .profile-nick{font-size:18px;font-weight:700}
+        .profile-level{font-size:12px;color:#888}
+        .rebirth-badge{display:inline-block;background:linear-gradient(135deg,#ff6600,#ffaa00);color:#000;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-left:6px}
+        .verified-check{display:inline-block;width:18px;height:18px;background:#0095f6;border-radius:50%;position:relative;margin-left:4px;vertical-align:middle}
+        .verified-check::after{content:'✓';color:#fff;font-size:11px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+        .leader-crown{display:inline-block;font-size:14px;margin-left:4px;vertical-align:middle}
+        .score{font-size:48px;font-weight:800;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;transition:transform 0.15s}
+        .score.pop{transform:scale(1.2)}
+        .per-second{font-size:14px;color:#888;text-align:center}
+        .combo-text{font-size:13px;font-weight:700;color:#ff6600;text-align:center;display:block;min-height:20px}
+        .stats-bar{display:flex;gap:8px;margin:15px 0}
+        .stat{flex:1;background:#1a1a1a;border-radius:12px;padding:10px;text-align:center}
+        .stat-value{font-size:16px;font-weight:700;color:#667eea}
+        .stat-label{font-size:10px;color:#888}
+        .clicker-area{display:flex;justify-content:center;align-items:center;padding:20px 0;position:relative}
+        #clickButton{width:150px;height:150px;border-radius:50%;border:none;font-size:55px;background:linear-gradient(145deg,#2a2a2a,#1a1a1a);box-shadow:0 0 30px rgba(102,126,234,0.4),0 0 60px rgba(102,126,234,0.2);cursor:pointer;transition:transform 0.1s,box-shadow 0.15s;touch-action:manipulation;outline:none;position:relative;z-index:10}
+        #clickButton:active{transform:scale(0.85);box-shadow:0 0 80px rgba(102,126,234,0.9),0 0 120px rgba(118,75,162,0.6)}
+        .float-text{position:absolute;font-size:24px;font-weight:900;background:linear-gradient(135deg,#667eea,#ff00ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;pointer-events:none;z-index:20;animation:floatUp 1s ease-out forwards;filter:drop-shadow(0 0 10px rgba(102,126,234,0.8))}
+        @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(0.5)}30%{opacity:1;transform:translateY(-30px) scale(1.3)}100%{opacity:0;transform:translateY(-120px) scale(0.8)}}
+        .particle{position:absolute;pointer-events:none;z-index:5;font-size:18px;animation:particleBurst 0.8s ease-out forwards}
+        @keyframes particleBurst{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0deg)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0) rotate(180deg)}}
+        .ripple{position:absolute;border-radius:50%;border:2px solid rgba(102,126,234,0.5);animation:rippleEffect 0.6s ease-out forwards;pointer-events:none;z-index:1}
+        @keyframes rippleEffect{0%{width:50px;height:50px;opacity:1}100%{width:200px;height:200px;opacity:0}}
+        .tabs-row{display:flex;gap:4px;background:#1a1a1a;border-radius:14px;padding:5px;justify-content:center;flex-wrap:wrap;margin:15px 0}
+        .tab{width:40px;height:40px;border-radius:10px;border:none;background:transparent;color:#888;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+        .tab.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 0 12px rgba(102,126,234,0.5)}
+        .notif-badge{position:relative;display:inline-block}
+        .badge-count{position:absolute;top:-8px;right:-12px;background:#ff0000;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:bold;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 0 5px rgba(255,0,0,0.5);font-family:monospace}
+        .shop-item{background:#1a1a1a;border-radius:14px;padding:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+        .item-info{flex:1}
+        .item-name{font-size:15px;font-weight:600}
+        .item-desc{font-size:11px;color:#888}
+        .item-cost{font-size:10px;color:#667eea;margin-top:4px}
+        .btn{padding:10px 16px;border-radius:20px;border:none;font-size:13px;font-weight:600;cursor:pointer;color:#fff}
+        .btn-buy{background:linear-gradient(135deg,#667eea,#764ba2);box-shadow:0 0 10px rgba(102,126,234,0.3)}
+        .btn-buy.locked{background:#333;color:#666;box-shadow:none}
+        .btn-potion{background:linear-gradient(135deg,#ff8800,#ffaa00);color:#000;box-shadow:0 0 10px rgba(255,136,0,0.3)}
+        .btn-potion.locked{background:#333;color:#666;box-shadow:none}
+        .btn-potion.active{background:#44ff44!important;color:#000!important;animation:glowPulse 1s infinite}
+        @keyframes glowPulse{0%,100%{box-shadow:0 0 10px #44ff44}50%{box-shadow:0 0 25px #44ff44}}
+        .btn-rebirth{padding:12px 20px;border-radius:20px;border:none;font-size:14px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#ff4444,#ff8800);color:#fff;width:100%;box-shadow:0 0 15px rgba(255,68,68,0.3)}
+        .btn-rebirth.locked{background:#333;color:#666;box-shadow:none}
+        .section{display:none}
+        .section.active{display:block}
+        .msg{text-align:center;padding:8px;font-size:13px;color:#667eea;min-height:20px}
+        .lb-row{display:flex;align-items:center;gap:10px;padding:10px;background:#1a1a1a;border-radius:10px;margin-bottom:5px}
+        .lb-rank{font-size:18px;font-weight:700;width:30px;color:#667eea}
+        .lb-name{flex:1;font-size:14px}
+        .lb-score{font-weight:700;color:#ffaa00}
+        .btn-lb{padding:8px 14px;border-radius:15px;border:none;font-size:12px;cursor:pointer;background:#333;color:#fff;margin:2px}
+        .btn-lb.active{background:#667eea}
+        .skin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+        .skin-btn{width:100%;aspect-ratio:1;border-radius:15px;border:2px solid #333;background:#1a1a1a;font-size:28px;cursor:pointer;transition:all 0.2s}
+        .skin-btn.active{border-color:#667eea;box-shadow:0 0 15px rgba(102,126,234,0.5);transform:scale(1.05)}
+        .skin-btn.locked{opacity:0.3}
+        .theme-btn{padding:8px 12px;border-radius:10px;border:1px solid #444;background:#1a1a1a;color:#fff;cursor:pointer;font-size:12px;margin:2px}
+        .theme-btn.active{border-color:#667eea}
+        .overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:100;justify-content:center;align-items:center}
+        .overlay.show{display:flex}
+        .ban-modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;display:flex;justify-content:center;align-items:center;flex-direction:column;padding:20px}
+        .ban-modal{background:#1a1a1a;border-radius:20px;padding:30px;max-width:350px;text-align:center;border:2px solid #ff4444}
+        .ban-modal .ban-icon{font-size:60px}
+        .ban-modal .ban-title{font-size:24px;font-weight:700;color:#ff4444;margin:15px 0}
+        .ban-modal .ban-reason{color:#fff;margin:10px 0}
+        .ban-modal .ban-time{color:#888;margin:10px 0}
+        .ban-modal .ban-close{padding:10px 20px;background:#ff4444;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;margin-top:20px}
+        #warnOverlay,#banOverlay,#replyOverlay,#deleteAccountOverlay,#globalMsgOverlay,#giveResourceOverlay,#giftOverlay,#profileViewOverlay,#friendRequestsOverlay{z-index:200!important}
+        .modal{background:#1a1a1a;border-radius:20px;padding:20px;width:90%;max-width:350px;max-height:80vh;overflow-y:auto}
+        .modal h3{margin-bottom:12px}
+        .modal input,.modal textarea{width:100%;padding:10px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;font-size:14px;margin-bottom:10px}
+        .modal textarea{height:60px;resize:none}
+        .modal select{width:100%;padding:10px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;margin-bottom:10px}
+        .modal .btn-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+        .modal .link{color:#667eea;font-size:12px;cursor:pointer;text-align:center;margin-top:8px}
+        .modal .error-msg{color:#ff4444;font-size:12px;text-align:center;margin:8px 0;min-height:16px}
+        .modal .success-msg{color:#44ff44;font-size:12px;text-align:center;margin:8px 0;min-height:16px}
+        .admin-player{display:flex;align-items:center;justify-content:space-between;padding:10px;background:#1a1a1a;border-radius:10px;margin-bottom:5px;gap:8px;flex-wrap:wrap}
+        .admin-player .info{flex:1;font-size:12px;min-width:100px}
+        .admin-player button{padding:6px 10px;border-radius:12px;border:none;font-size:11px;cursor:pointer;color:#fff}
+        .btn-verify{background:#44aa44}.btn-unverify{background:#888}.btn-warn{background:#ffaa00;color:#000}.btn-ban{background:#ff4444}.btn-delete{background:#ff4444}
+        .btn-clearwarn{background:#44aa44!important;font-size:10px!important;padding:5px 10px!important}
+        .btn-unban{background:#ff8800!important;font-size:10px!important;padding:5px 10px!important}
+        .btn-give-resource{background:#44aa44!important;font-size:10px!important;padding:5px 10px!important}
+        .notif-card{background:#1a1a1a;border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid #667eea;position:relative}
+        .notif-card.warn{border-left-color:#ffaa00}
+        .notif-card.ban{border-left-color:#ff4444}
+        .notif-card.reply{border-left-color:#44ff44}
+        .notif-card .notif-title{font-weight:700;font-size:13px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+        .notif-card .notif-text{font-size:12px;color:#ccc;margin-bottom:4px}
+        .notif-card .notif-time{font-size:10px;color:#888}
+        .delete-notif{background:none;border:none;color:#888;font-size:14px;cursor:pointer;padding:0 5px;transition:color 0.2s}
+        .delete-notif:hover{color:#ff4444}
+        .delete-all-notif{background:#ff4444;color:#fff;border:none;padding:5px 12px;border-radius:15px;font-size:11px;cursor:pointer}
+        .delete-all-notif:hover{background:#ff0000}
+        .bug-card{background:#1a1a1a;border-radius:10px;padding:12px;margin-bottom:8px}
+        .agreement-box{background:#111;border-radius:10px;padding:15px;margin:10px 0;max-height:200px;overflow-y:auto;font-size:11px;color:#aaa;line-height:1.5}
+        .agreement-check{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:13px}
+        .agreement-check input{width:18px;height:18px}
+        .warning-popup{background:#332200;border:1px solid #ffaa00;border-radius:10px;padding:12px;margin:10px 0;text-align:center;position:relative}
+        .warning-popup .warn-title{color:#ffaa00;font-weight:700}
+        .warning-popup .warn-text{font-size:12px;color:#ddd;margin:5px 0}
+        .close-warn-btn{position:absolute;top:5px;right:10px;background:none;border:none;color:#888;font-size:16px;cursor:pointer;padding:0 5px;transition:color 0.2s}
+        .close-warn-btn:hover{color:#fff}
+        .admin-settings-section{margin-top:15px;padding:10px;background:#222;border-radius:10px}
+        .admin-settings-section h4{font-size:14px;margin-bottom:8px}
+        .admin-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+        .admin-stat-card{background:#333;border-radius:8px;padding:8px;flex:1;min-width:80px;text-align:center}
+        .admin-stat-card .value{font-size:18px;font-weight:700;color:#667eea}
+        .admin-stat-card .label{font-size:10px;color:#888}
+        .marquee-container{position:fixed;top:0;left:0;width:100%;background:#ff4444;color:#fff;padding:8px;z-index:1000;overflow:hidden;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.3)}
+        .marquee-text{display:inline-block;animation:marquee 15s linear infinite}
+        @keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+        .event-badge{position:fixed;top:50px;right:10px;background:linear-gradient(135deg,#ff8800,#ff4400);color:#fff;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;z-index:99;animation:pulse 1s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+        .friend-card,.clan-member-card{background:#1a1a1a;border-radius:10px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+        .clan-info{background:#1a1a1a;border-radius:10px;padding:15px;margin-bottom:10px}
+        .clan-info h4{margin-bottom:5px;color:#667eea}
+        .search-result{background:#1a1a1a;border-radius:10px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+        .clan-card{background:#1a1a1a;border-radius:10px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    </style>
+</head>
+<body ontouchstart="">
+<div id="marqueeContainer" style="display:none" class="marquee-container"><div id="marqueeText" class="marquee-text"></div></div>
+<div id="eventBadge" style="display:none" class="event-badge">🎯 ИВЕНТ x2</div>
+<div class="app">
+    <div class="top-bar" id="topBar"><span>👤 <span id="topNick">Игрок</span></span><button onclick="changeNick()">✏️ Ник</button><button id="authBtn" onclick="showAuth()">🔐 Войти</button><button id="adminBtn" class="admin-btn" style="display:none" onclick="showAdmin()">🔒</button></div>
+    <div class="profile-info" id="profileBar"><div><span class="profile-nick" id="profileNick">Игрок</span><span class="verified-check" id="verifiedCheck" style="display:none"></span><span class="rebirth-badge" id="rebirthBadge" style="display:none">⭐<span id="rebirthCount">0</span></span></div><div class="profile-level" id="profileLevel">Уровень 1</div></div>
+    <div id="warningsContainer"></div>
+    <div class="score" id="score">0</div><div class="per-second" id="perSecond">0/сек</div><span class="combo-text" id="comboText"></span>
+    <div class="stats-bar"><div class="stat"><div class="stat-value" id="clickPower">1</div><div class="stat-label">Сила</div></div><div class="stat"><div class="stat-value" id="multiplierDisplay">x1</div><div class="stat-label">Множ</div></div><div class="stat"><div class="stat-value" id="totalEarned">0</div><div class="stat-label">Всего</div></div></div>
+    <div class="clicker-area" id="clickerArea"><button id="clickButton">💎</button></div>
+    <div class="tabs-row">
+        <button class="tab active" id="tabShop">🏪</button>
+        <button class="tab" id="tabPotions">🧪</button>
+        <button class="tab" id="tabRebirth">🔄</button>
+        <button class="tab" id="tabSkins">🎨</button>
+        <button class="tab" id="tabLeaderboard">🏆</button>
+        <button class="tab" id="tabProfile">👤</button>
+        <button class="tab" id="tabNotif"><span class="notif-badge">🔔<span id="notifBadgeCount" class="badge-count" style="display:none">0</span></span></button>
+        <button class="tab" id="tabBug">🐛</button>
+        <button class="tab" id="tabSocial">👥</button>
+        <button class="tab" id="tabClan">⚔️</button>
+        <button class="tab" id="tabInfo">ℹ️</button>
+    </div>
+    <div class="section active" id="shopSection"></div>
+    <div class="section" id="potionsSection"></div>
+    <div class="section" id="rebirthSection"></div>
+    <div class="section" id="skinsSection"></div>
+    <div class="section" id="leaderboardSection"></div>
+    <div class="section" id="profileSection"></div>
+    <div class="section" id="notifSection"></div>
+    <div class="section" id="bugSection"></div>
+    <div class="section" id="socialSection"></div>
+    <div class="section" id="clanSection"></div>
+    <div class="section" id="infoSection"></div>
+    <div class="msg" id="message"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:15px"><button class="btn btn-buy" id="saveBtn">💾</button><button class="btn" style="background:#333" id="loadBtn">📂</button><button class="btn" style="background:#333" id="resetBtn">🔄</button></div>
+</div>
+
+<!-- Оверлеи -->
+<div class="overlay" id="authOverlay"><div class="modal"><h3 id="authTitle">🔐 Вход / Регистрация</h3><input type="email" id="authEmail" placeholder="Email"><input type="password" id="authPass" placeholder="Пароль (мин 6 символов)"><div class="error-msg" id="authError"></div><div class="success-msg" id="authSuccess"></div><div class="agreement-check" id="agreementCheck" style="display:none"><input type="checkbox" id="agreeCheckbox"><span>Регистрируясь, вы соглашаетесь с <a href="#" onclick="showAgreement();return false" style="color:#667eea">пользовательским соглашением</a></span></div><div class="btn-row" id="authBtns"><button class="btn btn-buy" id="loginBtn">Войти</button><button class="btn" style="background:#44aa44" id="registerBtn">Регистрация</button></div><div class="link" id="forgotLink" onclick="showResetPassword()">Забыли пароль?</div><div class="link" id="backLink" onclick="showAuth()" style="display:none">← Назад</div><div class="link" onclick="hideOverlay()">Закрыть</div></div></div>
+<div class="overlay" id="warnOverlay"><div class="modal"><h3>⚠️ Выдать предупреждение</h3><input type="text" id="warnReason" placeholder="Причина"><div class="btn-row"><button class="btn btn-warn" id="confirmWarnBtn">⚠️ Выдать</button><button class="btn" style="background:#333" onclick="hideOverlay()">Отмена</button></div></div></div>
+<div class="overlay" id="banOverlay"><div class="modal"><h3>🚫 Забанить игрока</h3><input type="text" id="banReason" placeholder="Причина"><select id="banDuration"><option value="1440">1 день</option><option value="10080">7 дней</option><option value="43200">30 дней</option><option value="0">Навсегда</option></select><div class="btn-row"><button class="btn btn-ban" id="confirmBanBtn">🚫 Забанить</button><button class="btn" style="background:#333" onclick="hideOverlay()">Отмена</button></div></div></div>
+<div class="overlay" id="replyOverlay"><div class="modal"><h3>💬 Ответить</h3><textarea id="replyText" placeholder="Ваш ответ..."></textarea><div class="btn-row"><button class="btn btn-buy" id="confirmReplyBtn">📤 Отправить</button><button class="btn" style="background:#333" onclick="hideOverlay()">Отмена</button></div></div></div>
+<div class="overlay" id="agreementOverlay"><div class="modal"><h3>📜 Пользовательское соглашение</h3><div class="agreement-box" id="agreementText"></div><div class="link" onclick="document.getElementById('agreementOverlay').classList.remove('show')">Закрыть</div></div></div>
+<div class="overlay" id="adminOverlay"><div class="modal"><h3>🔒 Админ-панель</h3><div id="adminTabs" style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap"><button class="btn-lb active" onclick="showAdminTab('players')">👥 Игроки</button><button class="btn-lb" onclick="showAdminTab('bugs')">🐛 Баги</button><button class="btn-lb" onclick="showAdminTab('admins')">👑 Админы</button><button class="btn-lb" onclick="showAdminTab('stats')">📊 Статистика</button><button class="btn-lb" onclick="showAdminTab('gifts')">🎁 Подарки</button><button class="btn-lb" onclick="showAdminTab('logs')">📋 Логи</button><button class="btn-lb" onclick="showAdminTab('event')">🎯 Ивент</button><button class="btn-lb" onclick="showAdminTab('anticheat')">🛡️ Анти-чит</button><button class="btn-lb" onclick="showAdminTab('messages')">📢 Сообщения</button></div><div id="adminContent">Загрузка...</div><div class="link" onclick="hideOverlay()">Закрыть</div></div></div>
+<div class="overlay" id="massNotifyOverlay"><div class="modal"><h3>📢 Массовое уведомление</h3><input type="text" id="massNotifyTitle" placeholder="Заголовок"><textarea id="massNotifyText" placeholder="Текст уведомления..."></textarea><div class="btn-row"><button class="btn btn-buy" id="confirmMassNotifyBtn">📤 Отправить всем</button><button class="btn" style="background:#333" onclick="hideOverlay()">Отмена</button></div></div></div>
+<div class="overlay" id="globalMsgOverlay"><div class="modal"><h3>📢 Глобальное сообщение</h3><select id="globalMsgType" style="width:100%;padding:8px;margin-bottom:8px"><option value="marquee">🏃 Бегущая строка</option><option value="notification">🔔 Уведомление всем</option></select><select id="globalMsgDuration" style="width:100%;padding:8px;margin-bottom:8px"><option value="0">♾️ Бесконечно</option><option value="10">⏱️ 10 секунд</option><option value="30">⏱️ 30 секунд</option><option value="60">⏱️ 1 минута</option><option value="300">⏱️ 5 минут</option><option value="3600">⏱️ 1 час</option></select><input type="text" id="globalMsgText" placeholder="Текст сообщения"><div class="btn-row"><button class="btn btn-buy" id="confirmGlobalMsgBtn">📤 Отправить</button><button class="btn" style="background:#333" onclick="hideOverlay()">Отмена</button></div></div></div>
+<div class="overlay" id="giveResourceOverlay"><div class="modal"><h3>💰 Выдать ресурсы игроку</h3><select id="giveResourceType" style="width:100%;padding:8px;margin-bottom:8px"><option value="coins">💰 Монеты</option><option value="click">⚡ Сила клика</option><option value="auto">🏭 Авто-доход/сек</option></select><input type="number" id="giveResourceAmount" placeholder="Количество" value="100"><div class="btn-row"><button class="btn btn-buy" id="confirmGiveResourceBtn">💰 Выдать</button><button class="btn" style="background:#333" onclick="hideOverlay()">Отмена</button></div></div></div>
+<div class="overlay" id="giftOverlay"><div class="modal"><h3>🎁 Отправить подарок</h3><select id="giftType" style="width:100%;padding:8px;margin-bottom:8px"><option value="coins">💰 Монеты</option><option value="potion_cb">⚡ Зелье клика</option><option value="potion_ab">⏱ Зелье скорости</option><option value="potion_cr">💰 Зелье богатства</option></select><input type="number" id="giftAmount" placeholder="Количество монет" value="100"><textarea id="giftMessage" placeholder="Сообщение (необязательно)"></textarea><div class="btn-row"><button class="btn btn-buy" id="sendGiftBtn">🎁 Отправить</button><button class="btn" style="background:#333" onclick="hideOverlay()">Отмена</button></div></div></div>
+<div class="overlay" id="profileViewOverlay"><div class="modal"><h3>👤 Профиль игрока</h3><div id="viewProfileContent"></div><div class="btn-row"><button class="btn" style="background:#333" onclick="hideOverlay()">Закрыть</button></div></div></div>
+<div class="overlay" id="friendRequestsOverlay"><div class="modal"><h3>📨 Заявки в друзья</h3><div id="friendRequestsContent"></div><div class="btn-row"><button class="btn" style="background:#333" onclick="hideOverlay()">Закрыть</button></div></div></div>
+<div class="overlay" id="saveOverlay"><div class="modal"><h3>💾 Сохранение</h3><textarea id="saveCodeText" readonly></textarea><div class="btn-row"><button class="btn btn-buy" id="copySaveBtn">📋</button><button class="btn" style="background:#333" onclick="hideOverlay()">✕</button></div></div></div>
+<div class="overlay" id="loadOverlay"><div class="modal"><h3>📂 Загрузка</h3><textarea id="loadCodeText" placeholder="Вставьте код..."></textarea><div class="btn-row"><button class="btn btn-buy" id="confirmLoadBtn">✅</button><button class="btn" style="background:#333" onclick="hideOverlay()">✕</button></div></div></div>
+<div class="overlay" id="nickOverlay"><div class="modal"><h3>👤 Сменить ник</h3><input type="text" id="nickInput" maxlength="16"><div class="btn-row"><button class="btn btn-buy" id="confirmNickBtn">✅</button><button class="btn" style="background:#333" onclick="hideOverlay()">✕</button></div></div></div>
+<div class="overlay" id="resetOverlay"><div class="modal"><h3>⚠️ Сброс</h3><p style="color:#888;margin-bottom:12px">Все данные будут удалены!</p><div class="btn-row"><button class="btn" style="background:#ff3b30" id="confirmResetBtn">Да</button><button class="btn" style="background:#333" onclick="hideOverlay()">Нет</button></div></div></div>
+<div class="overlay" id="deleteAccountOverlay"><div class="modal"><h3>🗑️ Удаление аккаунта</h3><p style="color:#ff4444;margin-bottom:12px">Все данные будут безвозвратно удалены!</p><p style="color:#888;font-size:12px;margin-bottom:10px">Введите ваш email для подтверждения:</p><input type="email" id="deleteEmailConfirm" placeholder="Введите email"><div class="btn-row"><button class="btn" style="background:#ff3b30" id="confirmDeleteBtn">🗑️ Удалить</button><button class="btn" style="background:#333" onclick="hideOverlay()">Отмена</button></div></div></div>
+
+<script>
+const APP_VERSION = '2.4.0';
+const CHANGELOG = ['🎁 Подарки всем и игроку', '📋 Логи админов', '🎯 Ивент-режим', '🛡️ Анти-чит', '📢 Глобальные сообщения', '💰 Гибкая выдача', '🔔 Уведомления с поддержкой анонимов', '🗑️ Удаление уведомлений', '👥 Друзья и подарки между игроками', '⚔️ Кланы с бонусами', '👑 Корона лидера клана', '🔒 Закрытые кланы (по приглашениям)', '✅ Только один запрос в друзья', '🙈 Скрыты email в профилях'];
+const AGREEMENT_TEXT = 'Пользовательское соглашение NetClicker...';
+
+firebase.initializeApp({
+    apiKey: "AIzaSyAlXOn--D6dI5P66Ud0R_i94zHpN7aqQOo",
+    authDomain: "netclick-9893b.firebaseapp.com",
+    projectId: "netclick-9893b",
+    storageBucket: "netclick-9893b.firebasestorage.app",
+    messagingSenderId: "471598367997",
+    appId: "1:471598367997:web:9cd425ae622e0d060cea94"
+});
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Переменные
+var user = null, coins = 0, cp = 1, mult = 1, cps = 0, earned = 0, clicks = 0, nick = 'Игрок', rebirths = 0, rBonus = 0, comboT = 0, comboC = 0, comboM = 1, lbType = 'coins', skin = '💎', theme = 'dark', isAdmin = false, isVerified = false, adminRole = '', adminTab = 'players', allSkins = ['💎', '💰', '🔥', '⭐', '🌟', '🎯', '👑', '💀', '❤️', '🎪', '🔮'], unlockedSkins = ['💎'], warnTarget = '', banTarget = '', replyBugId = '', playerWarnings = [], giveResourceTarget = '', giftTargetEmail = '';
+var isBanned = false, banReason = '', banUntil = null;
+var eventActive = false, eventMultiplier = 2, eventEndTime = null;
+var clickTimestamps = [], maxClicksPerSecond = 20;
+var cachedNotifs = [], lastNotifUpdate = 0;
+var clanData = null;
+
+// Потions и предметы
+var potions = {
+    cb: { n: '⚡ Зелье клика', d: 'x2 сила клика на 30 сек', bc: 100, a: false, t: 0, dur: 30 },
+    ab: { n: '⏱ Зелье скорости', d: 'x2 автодоход на 30 сек', bc: 200, a: false, t: 0, dur: 30 },
+    cr: { n: '💰 Зелье богатства', d: 'x3 монеты на 15 сек', bc: 500, a: false, t: 0, dur: 15 }
+};
+var items = [
+    { n: 'Усиленный клик', d: '+1 к силе', c: 10, o: 0, b: 1, ty: 'click' },
+    { n: 'Авто-сборщик', d: '+1/сек', c: 50, o: 0, b: 1, ty: 'auto' },
+    { n: 'Множитель x2', d: 'Удваивает', c: 200, o: 0, b: 1, ty: 'multi' },
+    { n: 'Супер-клик', d: '+10 к силе', c: 500, o: 0, b: 10, ty: 'click' },
+    { n: 'Мега-ферма', d: '+10/сек', c: 2000, o: 0, b: 10, ty: 'auto' }
+];
+
+function msg(t) { var m = document.getElementById('message'); m.textContent = t; clearTimeout(m._t); m._t = setTimeout(function() { m.textContent = ''; }, 3000); }
+function lvl() { var l = 1, t = 100, r = earned; while (r >= t) { r -= t; l++; t = Math.floor(t * 1.5); } return l; }
+function pc(p) { return Math.floor(p.bc * (1 + (lvl() - 1) * 0.2) * (1 + rebirths * 0.5)); }
+function rr() { return Math.floor(10000 * Math.pow(2, rebirths)); }
+function eClick() { var p = cp; if (potions.cb.a) p *= 2; return p; }
+function eCPS() { var c = cps; if (potions.ab.a) c *= 2; return c; }
+function eMult() { var m = mult * comboM; if (potions.cr.a) m *= 3; if (eventActive) m *= eventMultiplier; if (clanData && clanData.bonus) m *= clanData.bonus; return m; }
+function applyTheme() { document.body.className = 'theme-' + theme; }
+function getSaveData() { return { coins: Math.floor(coins), cp: cp, mult: mult, cps: cps, earned: Math.floor(earned), clicks: clicks, nick: nick, rebirths: rebirths, rBonus: rBonus, skin: skin, theme: theme, unlockedSkins: unlockedSkins, items: items.map(function(it) { return it.o; }) }; }
+function loadData(d) { if (!d) return; if (d.coins !== undefined) coins = d.coins; if (d.cp !== undefined) cp = d.cp; if (d.mult !== undefined) mult = d.mult; if (d.cps !== undefined) cps = d.cps; if (d.earned !== undefined) earned = d.earned; if (d.clicks !== undefined) clicks = d.clicks; if (d.nick !== undefined && d.nick !== '') nick = d.nick; if (d.rebirths !== undefined) rebirths = d.rebirths; if (d.rBonus !== undefined) rBonus = d.rBonus; if (d.skin !== undefined) skin = d.skin; if (d.theme !== undefined) theme = d.theme; if (d.unlockedSkins !== undefined) unlockedSkins = d.unlockedSkins; if (d.items) for (var i = 0; i < d.items.length; i++) if (items[i]) items[i].o = d.items[i]; applyTheme(); document.getElementById('clickButton').textContent = skin; updateUI(); updateTopBar(); }
+function saveLocal() { try { localStorage.setItem('clicker_save', JSON.stringify(getSaveData())); } catch (e) {} }
+async function saveCloud() { if (!user || user.isAnonymous || !user.email) return; if (isBanned) return; try { var d = getSaveData(); d.nick = nick; d.uid = user.uid; d.email = user.email; d.updatedAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection('users').doc(user.email).set(d, { merge: true }); } catch (e) {} }
+async function loadCloud() { if (!user || !user.email) return false; try { var doc = await db.collection('users').doc(user.email).get(); if (doc.exists) { var data = doc.data(); if (data) { loadData(data); saveLocal(); return true; } } return false; } catch (e) { return false; } }
+function checkAntiCheat() { var now = Date.now(); clickTimestamps = clickTimestamps.filter(t => now - t < 1000); if (clickTimestamps.length >= maxClicksPerSecond) { msg('⚠️ Слишком быстрые клики!'); return false; } clickTimestamps.push(now); return true; }
+async function checkEventStatus() { try { var eventDoc = await db.collection('gameSettings').doc('event').get(); if (eventDoc.exists) { var data = eventDoc.data(); if (data.active && data.endTime && new Date(data.endTime) > new Date()) { eventActive = true; eventMultiplier = data.multiplier || 2; eventEndTime = new Date(data.endTime); document.getElementById('eventBadge').style.display = 'block'; document.getElementById('eventBadge').innerHTML = '🎯 ИВЕНТ x' + eventMultiplier; return; } } eventActive = false; document.getElementById('eventBadge').style.display = 'none'; } catch (e) {} }
+async function checkGlobalMessage() { try { var msgDoc = await db.collection('gameSettings').doc('globalMessage').get(); if (msgDoc.exists) { var data = msgDoc.data(); if (data.endTime && new Date(data.endTime) < new Date()) { await db.collection('gameSettings').doc('globalMessage').delete(); document.getElementById('marqueeContainer').style.display = 'none'; return; } if (data.type === 'marquee' && data.text) { document.getElementById('marqueeText').innerHTML = data.text; document.getElementById('marqueeContainer').style.display = 'block'; } else { document.getElementById('marqueeContainer').style.display = 'none'; } } else { document.getElementById('marqueeContainer').style.display = 'none'; } } catch (e) {} }
+function showBanMessageAndLogout() { var banText = banReason || 'Нарушение правил'; var modalHtml = '<div class="ban-modal-overlay" id="banModalOverlay"><div class="ban-modal"><div class="ban-icon">🚫</div><div class="ban-title">ВЫ ЗАБАНЕНЫ</div><div class="ban-reason">Причина: <b>' + banText + '</b></div><button class="ban-close" onclick="location.reload()">Понятно</button></div></div>'; var oldOverlay = document.getElementById('banModalOverlay'); if (oldOverlay) oldOverlay.remove(); document.body.insertAdjacentHTML('beforeend', modalHtml); logout(); }
+async function checkBanStatus() { if (!user || !user.email) return false; try { var banDoc = await db.collection('bans').doc(user.email).get(); if (banDoc.exists) { var banData = banDoc.data(); var isActive = false; if (banData.permanent) { isActive = true; banUntil = null; banReason = banData.reason || 'Нарушение правил'; } else if (banData.until && new Date(banData.until) > new Date()) { isActive = true; banUntil = banData.until; banReason = banData.reason || 'Нарушение правил'; } if (isActive) { isBanned = true; showBanMessageAndLogout(); return true; } else { await db.collection('bans').doc(user.email).delete(); isBanned = false; return false; } } else { isBanned = false; return false; } } catch (e) { return false; } }
+function checkBanAndRedirect() { if (isBanned) { showBanMessageAndLogout(); return true; } return false; }
+async function checkWarnings() { if (!user || !user.email) return; if (isBanned) return; try { var ws = await db.collection('warnings').where('email', '==', user.email).get(); playerWarnings = []; ws.forEach(function(d) { playerWarnings.push(d.data()); }); var ban = await db.collection('bans').doc(user.email).get(); if (ban.exists) { var bd = ban.data(); if (bd.permanent) { msg('🚫 Вы забанены навсегда!'); auth.signOut(); return; } if (bd.until && new Date(bd.until) > new Date()) { msg('🚫 Вы забанены до ' + new Date(bd.until).toLocaleString()); auth.signOut(); return; } } showWarnings(); } catch (e) {} }
+function showWarnings() { var container = document.getElementById('warningsContainer'); if (!container) return; if (playerWarnings.length === 0) { container.innerHTML = ''; return; } var userKey = user ? user.email : 'guest'; var closedWarnings = JSON.parse(localStorage.getItem('closedWarnings_' + userKey) || '[]'); var h = ''; for (var i = 0; i < playerWarnings.length; i++) { var w = playerWarnings[i]; var warnId = (w.time || 'warn_' + i).toString(); if (closedWarnings.includes(warnId)) continue; h += '<div class="warning-popup" id="warn_popup_' + warnId + '"><div class="warn-title">⚠️ Предупреждение ' + (i + 1) + '/' + playerWarnings.length + '</div><div class="warn-text">' + (w.reason || 'Нарушение правил') + '</div><div class="warn-text" style="font-size:10px">' + new Date(w.time).toLocaleString() + '</div><button class="close-warn-btn" onclick="closeWarningPopup(\'' + warnId + '\')">✖</button></div>'; } if (playerWarnings.length >= 3) { var banWarnId = 'ban_warning'; if (!closedWarnings.includes(banWarnId)) { h += '<div class="warning-popup" style="border-color:#ff4444"><div class="warn-title" style="color:#ff4444">🚫 Бан при 3 предупреждениях!</div><button class="close-warn-btn" onclick="closeWarningPopup(\'' + banWarnId + '\')">✖</button></div>'; } } container.innerHTML = h; }
+function closeWarningPopup(warnId) { var userKey = user ? user.email : 'guest'; var closedWarnings = JSON.parse(localStorage.getItem('closedWarnings_' + userKey) || '[]'); if (!closedWarnings.includes(warnId)) { closedWarnings.push(warnId); localStorage.setItem('closedWarnings_' + userKey, JSON.stringify(closedWarnings)); } var popup = document.getElementById('warn_popup_' + warnId); if (popup) { popup.style.display = 'none'; } else { showWarnings(); } }
+async function checkAdmin() { if (!user || isBanned) return; try { if (user.email) { var doc = await db.collection('admins').doc(user.email).get(); if (doc.exists) { isAdmin = true; adminRole = doc.data().role || 'moderator'; } } if (!isAdmin) { var doc2 = await db.collection('admins').doc(user.uid).get(); if (doc2.exists) { isAdmin = true; adminRole = doc2.data().role || 'moderator'; } } if (user.email) { var vdoc = await db.collection('users').doc(user.email).get(); if (vdoc.exists && vdoc.data().verified) isVerified = true; } } catch (e) {} document.getElementById('adminBtn').style.display = isAdmin ? 'inline-block' : 'none'; document.getElementById('verifiedCheck').style.display = isVerified ? 'inline-block' : 'none'; }
+function canManageAdmins() { return adminRole === 'owner'; }
+function canBan() { return adminRole === 'owner' || adminRole === 'admin'; }
+function canWarn() { return isAdmin; }
+function canGiveResources() { return isAdmin; }
+
+async function getGlobalStats() {
+    try {
+        var usersSnap = await db.collection('users').get();
+        var totalPlayers = usersSnap.size;
+        var totalClicks = 0, totalCoins = 0, totalEarnedSum = 0, totalRebirths = 0;
+        usersSnap.forEach(function(doc) { var d = doc.data(); totalClicks += (d.clicks || 0); totalCoins += (d.coins || 0); totalEarnedSum += (d.earned || 0); totalRebirths += (d.rebirths || 0); });
+        var today = new Date(); today.setHours(0,0,0,0);
+        var todayActive = 0;
+        usersSnap.forEach(function(doc) { var d = doc.data(); if (d.updatedAt && new Date(d.updatedAt.toDate()) > today) todayActive++; });
+        return { totalPlayers: totalPlayers, totalClicks: totalClicks, totalCoins: Math.floor(totalCoins), totalEarned: Math.floor(totalEarnedSum), totalRebirths: totalRebirths, todayActive: todayActive };
+    } catch (e) { return null; }
+}
+async function addAdminLog(action, details) { try { await db.collection('adminLogs').add({ adminEmail: user?.email, adminNick: nick, action: action, details: details, time: new Date().toISOString() }); } catch (e) {} }
+
+// ========== УВЕДОМЛЕНИЯ ==========
+async function sendNotification(email, type, title, text) {
+    try {
+        if (email && email.includes('@')) {
+            await db.collection('notifications').add({ email: email, type: type, title: title, text: text, time: new Date().toISOString(), read: false });
+        } else {
+            var anonymousNotifs = JSON.parse(localStorage.getItem('anonymous_notifications') || '[]');
+            anonymousNotifs.push({ type: type, title: title, text: text, time: new Date().toISOString(), read: false });
+            if (anonymousNotifs.length > 50) anonymousNotifs.shift();
+            localStorage.setItem('anonymous_notifications', JSON.stringify(anonymousNotifs));
+            if (type === 'reply') msg('💬 ' + title + ': ' + text);
+            else if (type === 'warn') msg('⚠️ ' + title + ': ' + text);
+            else if (type === 'ban') msg('🚫 ' + title + ': ' + text);
+            else msg('🔔 ' + title + ': ' + text);
+        }
+    } catch(e) {}
+}
+async function loadNotifsInBackground() {
+    if (!user || !user.email) {
+        var anonymousNotifs = JSON.parse(localStorage.getItem('anonymous_notifications') || '[]');
+        cachedNotifs = anonymousNotifs.map(function(n, index) { return { id: 'anon_' + index, data: n }; });
+        updateNotifBadge();
+        return;
+    }
+    try {
+        var snapshot = await db.collection('notifications').where('email', '==', user.email).orderBy('time', 'desc').limit(50).get();
+        cachedNotifs = []; snapshot.forEach(function(doc) { cachedNotifs.push({ id: doc.id, data: doc.data() }); });
+        var anonymousNotifs = JSON.parse(localStorage.getItem('anonymous_notifications') || '[]');
+        if (anonymousNotifs.length > 0) {
+            for (var i = 0; i < anonymousNotifs.length; i++) { var n = anonymousNotifs[i]; await db.collection('notifications').add({ email: user.email, type: n.type, title: n.title, text: n.text, time: n.time, read: false }); }
+            localStorage.removeItem('anonymous_notifications');
+            snapshot = await db.collection('notifications').where('email', '==', user.email).orderBy('time', 'desc').limit(50).get();
+            cachedNotifs = []; snapshot.forEach(function(doc) { cachedNotifs.push({ id: doc.id, data: doc.data() }); });
+            msg('📦 ' + anonymousNotifs.length + ' уведомлений перенесено в аккаунт');
+        }
+        updateNotifBadge();
+    } catch (e) {}
+}
+async function updateNotifBadge() {
+    if (!user || !user.email) {
+        var anonymousNotifs = JSON.parse(localStorage.getItem('anonymous_notifications') || '[]');
+        var unreadCount = anonymousNotifs.filter(function(n) { return !n.read && n.type === 'reply'; }).length;
+        if (unreadCount > 0) { document.getElementById('notifBadgeCount').textContent = unreadCount > 99 ? '99+' : unreadCount; document.getElementById('notifBadgeCount').style.display = 'flex'; } else { document.getElementById('notifBadgeCount').style.display = 'none'; }
+        return;
+    }
+    try {
+        var snapshot = await db.collection('notifications').where('email', '==', user.email).where('read', '==', false).where('type', '==', 'reply').get();
+        var count = snapshot.size;
+        if (count > 0) { document.getElementById('notifBadgeCount').textContent = count > 99 ? '99+' : count; document.getElementById('notifBadgeCount').style.display = 'flex'; } else { document.getElementById('notifBadgeCount').style.display = 'none'; }
+    } catch (e) {}
+}
+async function markAllAsRead() { if (!user || !user.email) return; try { var snapshot = await db.collection('notifications').where('email', '==', user.email).where('read', '==', false).where('type', '==', 'reply').get(); for (var doc of snapshot.docs) { await doc.ref.update({ read: true }); } updateNotifBadge(); } catch (e) {} }
+async function deleteNotificationFast(notifId) { try { if (notifId.toString().startsWith('anon_')) { var anonymousNotifs = JSON.parse(localStorage.getItem('anonymous_notifications') || '[]'); var index = parseInt(notifId.split('_')[1]); if (!isNaN(index) && anonymousNotifs[index]) { anonymousNotifs.splice(index, 1); localStorage.setItem('anonymous_notifications', JSON.stringify(anonymousNotifs)); renderNotifSection(); updateNotifBadge(); msg('🗑️ Уведомление удалено'); } return; } await db.collection('notifications').doc(notifId).delete(); renderNotifSection(); updateNotifBadge(); msg('🗑️ Уведомление удалено'); } catch (e) { msg('❌ Ошибка'); } }
+async function deleteAllNotifications(notifs) { if (!confirm('Удалить все обычные уведомления?')) return; var count = 0; for (var i = 0; i < notifs.length; i++) { var n = notifs[i].data, id = notifs[i].id; if (n.type !== 'warn' && n.type !== 'ban') { try { if (id.toString().startsWith('anon_')) { var anonymousNotifs = JSON.parse(localStorage.getItem('anonymous_notifications') || '[]'); var idx = parseInt(id.split('_')[1]); if (!isNaN(idx) && anonymousNotifs[idx]) { anonymousNotifs.splice(idx, 1); localStorage.setItem('anonymous_notifications', JSON.stringify(anonymousNotifs)); count++; } } else { await db.collection('notifications').doc(id).delete(); count++; } } catch (e) {} } } if (count > 0) { msg(`🗑️ Удалено ${count} уведомлений`); renderNotifSection(); updateNotifBadge(); } else { msg('Нет уведомлений для удаления'); } }
+async function renderNotifSection() {
+    var container = document.getElementById('notifSection'); if (!container) return; container.innerHTML = '<div style="text-align:center;padding:20px;color:#888">⏳ Загрузка...</div>';
+    if (!user || !user.email) {
+        var anonymousNotifs = JSON.parse(localStorage.getItem('anonymous_notifications') || '[]');
+        if (anonymousNotifs.length === 0) { container.innerHTML = '<div style="text-align:center;padding:20px"><div style="font-size:40px">🔔</div><div style="color:#888">Нет уведомлений</div><div style="color:#888;font-size:12px;margin-top:10px">Войдите в аккаунт, чтобы получать уведомления о банах и предупреждениях</div></div>'; return; }
+        for (var i = 0; i < anonymousNotifs.length; i++) anonymousNotifs[i].read = true;
+        localStorage.setItem('anonymous_notifications', JSON.stringify(anonymousNotifs));
+        var headerDiv = document.createElement('div'); headerDiv.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px;margin-bottom:10px';
+        var title = document.createElement('div'); title.style.cssText = 'font-size:18px;font-weight:700'; title.textContent = '🔔 Уведомления (только история)'; headerDiv.appendChild(title);
+        var clearBtn = document.createElement('button'); clearBtn.textContent = '🗑️ Очистить историю'; clearBtn.className = 'delete-all-notif'; clearBtn.onclick = function() { localStorage.removeItem('anonymous_notifications'); renderNotifSection(); updateNotifBadge(); msg('✅ История уведомлений очищена'); }; headerDiv.appendChild(clearBtn);
+        container.innerHTML = ''; container.appendChild(headerDiv);
+        for (var i = 0; i < anonymousNotifs.length; i++) { var n = anonymousNotifs[i]; var card = document.createElement('div'); card.className = 'notif-card'; if (n.type === 'warn') card.classList.add('warn'); if (n.type === 'ban') card.classList.add('ban'); if (n.type === 'reply') card.classList.add('reply'); var cardTitleDiv = document.createElement('div'); cardTitleDiv.className = 'notif-title'; var titleSpan = document.createElement('span'); titleSpan.textContent = n.title || 'Уведомление'; cardTitleDiv.appendChild(titleSpan); var txt = document.createElement('div'); txt.className = 'notif-text'; txt.textContent = n.text || ''; var time = document.createElement('div'); time.className = 'notif-time'; time.textContent = '🕐 ' + new Date(n.time).toLocaleString(); card.appendChild(cardTitleDiv); card.appendChild(txt); card.appendChild(time); container.appendChild(card); }
+        updateNotifBadge(); return;
+    }
+    if (Date.now() - lastNotifUpdate > 5000) await loadNotifsInBackground();
+    var notifs = cachedNotifs;
+    for (var i = 0; i < notifs.length; i++) { var n = notifs[i].data, id = notifs[i].id; if (!n.read && n.type === 'reply') { try { await db.collection('notifications').doc(id).update({ read: true }); n.read = true; } catch(e) {} } }
+    if (notifs.length === 0) { container.innerHTML = '<div style="text-align:center;padding:20px"><div style="font-size:40px">🔔</div><div style="color:#888">Нет уведомлений</div></div>'; updateNotifBadge(); return; }
+    var hasDeletable = false; for (var i = 0; i < notifs.length; i++) { if (notifs[i].data.type !== 'warn' && notifs[i].data.type !== 'ban') { hasDeletable = true; break; } }
+    var headerDiv = document.createElement('div'); headerDiv.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px;margin-bottom:10px';
+    var title = document.createElement('div'); title.style.cssText = 'font-size:18px;font-weight:700'; title.textContent = '🔔 Уведомления (' + notifs.length + ')'; headerDiv.appendChild(title);
+    if (hasDeletable) { var deleteAllBtn = document.createElement('button'); deleteAllBtn.textContent = '🗑️ Удалить все'; deleteAllBtn.className = 'delete-all-notif'; deleteAllBtn.onclick = function() { deleteAllNotifications(notifs); }; headerDiv.appendChild(deleteAllBtn); }
+    container.innerHTML = ''; container.appendChild(headerDiv);
+    for (var i = 0; i < notifs.length; i++) { var n = notifs[i].data, notifId = notifs[i].id; var card = document.createElement('div'); card.className = 'notif-card'; if (n.type === 'warn') card.classList.add('warn'); if (n.type === 'ban') card.classList.add('ban'); if (n.type === 'reply') card.classList.add('reply'); var cardTitleDiv = document.createElement('div'); cardTitleDiv.className = 'notif-title'; var titleSpan = document.createElement('span'); titleSpan.textContent = n.title || 'Уведомление'; cardTitleDiv.appendChild(titleSpan); if (n.type !== 'warn' && n.type !== 'ban') { var delBtn = document.createElement('button'); delBtn.className = 'delete-notif'; delBtn.innerHTML = '✖'; delBtn.onclick = (function(id) { return function() { deleteNotificationFast(id); }; })(notifId); cardTitleDiv.appendChild(delBtn); } var txt = document.createElement('div'); txt.className = 'notif-text'; txt.textContent = n.text || ''; var time = document.createElement('div'); time.className = 'notif-time'; time.textContent = '🕐 ' + (n.time ? new Date(n.time).toLocaleString() : new Date().toLocaleString()); card.appendChild(cardTitleDiv); card.appendChild(txt); card.appendChild(time); container.appendChild(card); }
+    updateNotifBadge();
+}
+
+// ========== ДРУЗЬЯ ==========
+async function getFriendsList() {
+    if (!user || !user.email) return [];
+    try {
+        var snapshot = await db.collection('friends')
+            .where('userEmail', '==', user.email)
+            .where('status', '==', 'accepted')
+            .get();
+        var friends = [];
+        for (var doc of snapshot.docs) {
+            var friendEmail = doc.data().friendEmail;
+            var friendDoc = await db.collection('users').doc(friendEmail).get();
+            var friendNick = friendDoc.exists ? (friendDoc.data().nick || friendEmail.split('@')[0]) : friendEmail.split('@')[0];
+            friends.push({ email: friendEmail, nick: friendNick, data: friendDoc.data() });
+        }
+        return friends;
+    } catch (e) { return []; }
+}
+async function sendFriendRequest(email) {
+    if (!user || !user.email) { msg('Войдите в аккаунт'); return; }
+    if (email === user.email) { msg('Нельзя добавить себя'); return; }
+    try {
+        var existingFriend = await db.collection('friends')
+            .where('userEmail', '==', user.email)
+            .where('friendEmail', '==', email)
+            .where('status', '==', 'accepted')
+            .get();
+        if (!existingFriend.empty) { msg('❌ Этот игрок уже в друзьях'); return; }
+        var existingRequest = await db.collection('friendRequests')
+            .where('from', '==', user.email)
+            .where('to', '==', email)
+            .where('status', '==', 'pending')
+            .get();
+        if (!existingRequest.empty) { msg('❌ Вы уже отправили заявку этому игроку'); return; }
+        var existingRequest2 = await db.collection('friendRequests')
+            .where('from', '==', email)
+            .where('to', '==', user.email)
+            .where('status', '==', 'pending')
+            .get();
+        if (!existingRequest2.empty) { msg('❌ У вас уже есть входящая заявка от этого игрока'); return; }
+        await db.collection('friendRequests').add({
+            from: user.email,
+            fromNick: nick,
+            to: email,
+            time: new Date().toISOString(),
+            status: 'pending'
+        });
+        await sendNotification(email, 'reply', '📨 Заявка в друзья', nick + ' хочет добавить вас в друзья');
+        msg('✅ Заявка отправлена');
+        renderSocialSection();
+    } catch (e) { msg('❌ Ошибка'); }
+}
+async function acceptFriendRequest(requestId, fromEmail) {
+    try {
+        await db.collection('friendRequests').doc(requestId).delete();
+        await db.collection('friends').add({ userEmail: user.email, friendEmail: fromEmail, status: 'accepted', since: new Date().toISOString() });
+        await db.collection('friends').add({ userEmail: fromEmail, friendEmail: user.email, status: 'accepted', since: new Date().toISOString() });
+        await sendNotification(fromEmail, 'reply', '👥 Новый друг', nick + ' принял вашу заявку в друзья');
+        msg('✅ Заявка принята');
+        renderSocialSection();
+    } catch (e) { msg('❌ Ошибка'); }
+}
+async function removeFriend(friendEmail) {
+    if (!confirm('Удалить друга?')) return;
+    try {
+        var snapshot1 = await db.collection('friends').where('userEmail', '==', user.email).where('friendEmail', '==', friendEmail).get();
+        for (var doc of snapshot1.docs) await doc.ref.delete();
+        var snapshot2 = await db.collection('friends').where('userEmail', '==', friendEmail).where('friendEmail', '==', user.email).get();
+        for (var doc of snapshot2.docs) await doc.ref.delete();
+        msg('❌ Друг удалён');
+        renderSocialSection();
+    } catch (e) { msg('❌ Ошибка'); }
+}
+
+// ========== ПОДАРКИ МЕЖДУ ИГРОКАМИ ==========
+async function sendGift(toEmail, type, amount, message) {
+    if (!user || !user.email) { msg('Войдите в аккаунт'); return; }
+    if (type === 'coins' && coins < amount) { msg('Не хватает монет'); return; }
+    try {
+        if (type === 'coins') { coins -= amount; saveLocal(); saveCloud(); updateUI(); }
+        await db.collection('gifts').add({
+            from: user.email, fromNick: nick, to: toEmail, type: type, amount: amount, message: message || '',
+            time: new Date().toISOString(), claimed: false
+        });
+        await sendNotification(toEmail, 'reply', '🎁 Подарок', nick + ' отправил вам ' + (type === 'coins' ? amount + ' монет' : type === 'potion_cb' ? 'зелье клика' : type === 'potion_ab' ? 'зелье скорости' : 'зелье богатства'));
+        msg('✅ Подарок отправлен');
+        renderSocialSection();
+    } catch (e) { msg('❌ Ошибка'); }
+}
+async function claimGift(giftId, giftData) {
+    if (!user || !user.email) return;
+    try {
+        if (giftData.type === 'coins') { coins += giftData.amount; msg('🎁 Вы получили ' + giftData.amount + ' монет от ' + giftData.fromNick); }
+        else if (giftData.type === 'potion_cb') { potions.cb.a = true; potions.cb.t = potions.cb.dur; msg('⚡ Вы получили зелье клика от ' + giftData.fromNick); }
+        else if (giftData.type === 'potion_ab') { potions.ab.a = true; potions.ab.t = potions.ab.dur; msg('⏱ Вы получили зелье скорости от ' + giftData.fromNick); }
+        else if (giftData.type === 'potion_cr') { potions.cr.a = true; potions.cr.t = potions.cr.dur; msg('💰 Вы получили зелье богатства от ' + giftData.fromNick); }
+        await db.collection('gifts').doc(giftId).delete();
+        saveLocal(); saveCloud(); updateUI();
+        renderSocialSection();
+    } catch (e) { msg('❌ Ошибка'); }
+}
+
+// ========== КЛАНЫ ==========
+async function getMyClan() {
+    if (!user || !user.email) return null;
+    try {
+        var snapshot = await db.collection('clans').where('members', 'array-contains', user.email).get();
+        if (!snapshot.empty) { var doc = snapshot.docs[0]; clanData = doc.data(); clanData.id = doc.id; return clanData; }
+        return null;
+    } catch (e) { return null; }
+}
+async function createClan() {
+    if (!user || !user.email) { msg('Войдите в аккаунт'); return; }
+    var name = prompt('Название клана (от 3 до 20 символов)');
+    if (!name || name.length < 3 || name.length > 20) { msg('Название от 3 до 20 символов'); return; }
+    var tag = prompt('Тег клана (2-5 символов, заглавные буквы)');
+    if (!tag || tag.length < 2 || tag.length > 5) { msg('Тег от 2 до 5 символов'); return; }
+    tag = tag.toUpperCase();
+    if (coins < 10000) { msg('Нужно 10000 монет для создания клана'); return; }
+    var existing = await db.collection('clans').where('name', '==', name).get();
+    if (!existing.empty) { msg('Клан с таким названием уже существует'); return; }
+    existing = await db.collection('clans').where('tag', '==', tag).get();
+    if (!existing.empty) { msg('Клан с таким тегом уже существует'); return; }
+    coins -= 10000; saveLocal(); saveCloud(); updateUI();
+    await db.collection('clans').add({
+        name: name, tag: tag, leader: user.email, members: [user.email],
+        created: new Date().toISOString(), level: 1, totalCoins: 0, isOpen: true, bonus: 1.05
+    });
+    msg('✅ Клан "' + name + '" создан!');
+    renderClanSection();
+}
+async function joinClan(clanId, clanName) {
+    if (!user || !user.email) { msg('Войдите в аккаунт'); return; }
+    var myClan = await getMyClan();
+    if (myClan) { msg('Вы уже в клане. Выйдите сначала.'); return; }
+    try {
+        var clanRef = db.collection('clans').doc(clanId);
+        var clanDoc = await clanRef.get();
+        if (!clanDoc.exists) { msg('Клан не найден'); return; }
+        if (!clanDoc.data().isOpen) { msg('Клан закрыт для вступления'); return; }
+        await clanRef.update({ members: firebase.firestore.FieldValue.arrayUnion(user.email) });
+        msg('✅ Вы вступили в клан ' + clanName);
+        renderClanSection();
+    } catch(e) { msg('❌ Ошибка'); }
+}
+async function leaveClan() {
+    var clan = await getMyClan();
+    if (!clan) { msg('Вы не в клане'); return; }
+    if (clan.leader === user.email && clan.members.length > 1) { msg('Сначала передайте лидерство другому участнику'); return; }
+    try {
+        var clanRef = db.collection('clans').doc(clan.id);
+        await clanRef.update({ members: firebase.firestore.FieldValue.arrayRemove(user.email) });
+        if (clan.members.length === 1) await clanRef.delete();
+        msg('👋 Вы вышли из клана');
+        clanData = null;
+        renderClanSection();
+    } catch(e) { msg('❌ Ошибка'); }
+}
+async function toggleClanOpenness() {
+    var clan = await getMyClan();
+    if (!clan) { msg('Вы не в клане'); return; }
+    if (clan.leader !== user.email) { msg('Только лидер может изменять статус клана'); return; }
+    try {
+        await db.collection('clans').doc(clan.id).update({ isOpen: !clan.isOpen });
+        msg(clan.isOpen ? '🔒 Клан закрыт (только по приглашениям)' : '🔓 Клан открыт');
+        renderClanSection();
+    } catch(e) { msg('❌ Ошибка'); }
+}
+async function showInviteDialog() {
+    var clan = await getMyClan();
+    if (!clan) { msg('Вы не в клане'); return; }
+    if (clan.leader !== user.email) { msg('Только лидер может приглашать'); return; }
+    var email = prompt('Введите email игрока для приглашения в клан');
+    if (!email) return;
+    try {
+        var userDoc = await db.collection('users').doc(email).get();
+        if (!userDoc.exists) { msg('Игрок не найден'); return; }
+        var checkClan = await db.collection('clans').where('members', 'array-contains', email).get();
+        if (!checkClan.empty) { msg('Игрок уже в клане'); return; }
+        await db.collection('clanInvites').add({
+            clanId: clan.id, clanName: clan.name, from: user.email, fromNick: nick, to: email,
+            time: new Date().toISOString(), status: 'pending'
+        });
+        await sendNotification(email, 'reply', '📨 Приглашение в клан', nick + ' приглашает вас в клан "' + clan.name + '"');
+        msg('✅ Приглашение отправлено');
+    } catch(e) { msg('❌ Ошибка'); }
+}
+async function kickFromClan(memberEmail) {
+    var clan = await getMyClan();
+    if (!clan) { msg('Вы не в клане'); return; }
+    if (clan.leader !== user.email) { msg('Только лидер может исключать участников'); return; }
+    if (!confirm('Исключить ' + memberEmail.split('@')[0] + ' из клана?')) return;
+    try {
+        await db.collection('clans').doc(clan.id).update({ members: firebase.firestore.FieldValue.arrayRemove(memberEmail) });
+        await sendNotification(memberEmail, 'reply', '⚠️ Исключение из клана', 'Вы были исключены из клана "' + clan.name + '"');
+        msg('✅ Игрок исключён');
+        renderClanSection();
+    } catch(e) { msg('❌ Ошибка'); }
+}
+async function deleteClan() {
+    var clan = await getMyClan();
+    if (!clan) { msg('Вы не в клане'); return; }
+    if (clan.leader !== user.email) { msg('Только лидер может удалить клан'); return; }
+    if (!confirm('УДАЛИТЬ КЛАН? Все участники будут выгнаны. Действие необратимо!')) return;
+    try {
+        await db.collection('clans').doc(clan.id).delete();
+        msg('🗑️ Клан удалён');
+        renderClanSection();
+    } catch(e) { msg('❌ Ошибка'); }
+}
+async function searchClans() {
+    var query = document.getElementById('clanSearchInput').value.toLowerCase();
+    if (!query) { renderClanSection(); return; }
+    try {
+        var snapshot = await db.collection('clans').get();
+        var results = [];
+        snapshot.forEach(function(doc) { var c = doc.data(); if (c.name.toLowerCase().includes(query) || c.tag.toLowerCase().includes(query)) { results.push({ id: doc.id, data: c }); } });
+        var container = document.getElementById('clanSection');
+        if (!container) return;
+        var html = '<div style="margin-bottom:10px"><button class="btn-buy" onclick="renderClanSection()">← Назад</button></div>';
+        if (results.length === 0) html += '<div style="color:#888;text-align:center;padding:20px">Кланы не найдены</div>';
+        else {
+            for (var i = 0; i < results.length; i++) { var c = results[i].data; html += '<div class="clan-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#1a1a1a;border-radius:10px;margin-bottom:8px"><div><b>' + c.name + '</b> (' + c.tag + ')<br><small>👥 ' + c.members.length + ' участников</small><br><small>' + (c.isOpen ? '🔓 Открытый' : '🔒 Закрытый') + '</small></div>' + (c.isOpen ? '<button class="btn-buy" style="padding:5px 10px" onclick="joinClan(\'' + results[i].id + '\', \'' + c.name + '\')">Вступить</button>' : '<span style="color:#888">Только по приглашению</span>') + '</div>'; }
+        }
+        container.innerHTML = html;
+    } catch(e) {}
+}
+
+// ========== АДМИНКА ==========
+async function sendGiftToAllFlex() { var giftType = document.getElementById('giftAllType').value; var amount = parseInt(document.getElementById('giftAllAmount').value); if (isNaN(amount) || amount <= 0) { msg('Введите корректное количество'); return; } if (!confirm(`Отправить ВСЕМ игрокам: ${amount} ${giftType === 'coins' ? 'монет' : (giftType === 'click' ? 'силы клика' : 'авто-дохода')}?`)) return; var usersSnap = await db.collection('users').get(); var count = 0; for (var userDoc of usersSnap.docs) { var userData = userDoc.data(); var email = userDoc.id; if (giftType === 'coins') { await db.collection('users').doc(email).update({ coins: (userData.coins || 0) + amount, earned: (userData.earned || 0) + amount }); await sendNotification(email, 'reply', '🎁 Подарок', `Вам начислено ${amount} монет!`); } else if (giftType === 'click') { await db.collection('users').doc(email).update({ cp: (userData.cp || 1) + amount }); await sendNotification(email, 'reply', '🎁 Подарок', `Ваша сила клика увеличена на +${amount}!`); } else if (giftType === 'auto') { await db.collection('users').doc(email).update({ cps: (userData.cps || 0) + amount }); await sendNotification(email, 'reply', '🎁 Подарок', `Ваш автодоход увеличен на +${amount}/сек!`); } count++; } await addAdminLog('Подарок всем', `${giftType}: ${amount}, игроков: ${count}`); msg(`✅ Подарок отправлен ${count} игрокам`); loadNotifsInBackground(); showAdmin(); }
+async function sendGiftToPlayerFlex() { var email = document.getElementById('giftPlayerEmail').value.trim(); var giftType = document.getElementById('giftPlayerType').value; var amount = parseInt(document.getElementById('giftPlayerAmount').value); if (!email) { msg('Введите email игрока'); return; } if (isNaN(amount) || amount <= 0) { msg('Введите корректное количество'); return; } try { var userRef = db.collection('users').doc(email); var userDoc = await userRef.get(); if (!userDoc.exists) { msg('Игрок не найден'); return; } var userData = userDoc.data(); if (giftType === 'coins') { await userRef.update({ coins: (userData.coins || 0) + amount, earned: (userData.earned || 0) + amount }); await sendNotification(email, 'reply', '🎁 Подарок', `Вам начислено ${amount} монет!`); } else if (giftType === 'click') { await userRef.update({ cp: (userData.cp || 1) + amount }); await sendNotification(email, 'reply', '🎁 Подарок', `Ваша сила клика увеличена на +${amount}!`); } else if (giftType === 'auto') { await userRef.update({ cps: (userData.cps || 0) + amount }); await sendNotification(email, 'reply', '🎁 Подарок', `Ваш автодоход увеличен на +${amount}/сек!`); } await addAdminLog('Подарок игроку', `${email} → ${giftType}: ${amount}`); msg(`✅ Подарок отправлен ${email}`); loadNotifsInBackground(); showAdmin(); } catch (e) { msg('❌ Ошибка: ' + e.message); } }
+async function sendGlobalMessageFromPanel() { var msgType = document.getElementById('globalMsgType').value; var msgText = document.getElementById('globalMsgText').value.trim(); var duration = parseInt(document.getElementById('globalMsgDuration').value); if (msgType === 'marquee') { if (!msgText && duration === 0) { await clearMarquee(); return; } if (!msgText) { msg('Введите текст'); return; } var endTime = duration > 0 ? new Date(Date.now() + duration * 1000).toISOString() : null; await db.collection('gameSettings').doc('globalMessage').set({ type: 'marquee', text: msgText, endTime: endTime }); document.getElementById('marqueeText').innerHTML = msgText; document.getElementById('marqueeContainer').style.display = 'block'; if (duration > 0) { msg(`✅ Бегущая строка на ${duration} сек`); setTimeout(async () => { var current = await db.collection('gameSettings').doc('globalMessage').get(); if (current.exists && current.data().text === msgText) { await db.collection('gameSettings').doc('globalMessage').delete(); document.getElementById('marqueeContainer').style.display = 'none'; } }, duration * 1000); } else { msg('✅ Бегущая строка запущена (бесконечно)'); } await addAdminLog('Глобальное сообщение', `Бегущая строка: ${msgText}`); } else { if (!msgText) { msg('Введите текст'); return; } var usersSnap = await db.collection('users').get(); var count = 0; for (var userDoc of usersSnap.docs) { await sendNotification(userDoc.id, 'reply', '📢 Глобальное объявление', msgText); count++; } await addAdminLog('Глобальное уведомление', `${msgText} (${count} игроков)`); msg(`✅ Уведомление отправлено ${count} игрокам`); loadNotifsInBackground(); } hideOverlay(); document.getElementById('globalMsgText').value = ''; }
+async function clearMarquee() { await db.collection('gameSettings').doc('globalMessage').delete(); document.getElementById('marqueeContainer').style.display = 'none'; await addAdminLog('Глобальное сообщение', 'Бегущая строка удалена'); msg('✅ Бегущая строка убрана'); hideOverlay(); }
+async function startEvent() { var multiplier = parseInt(document.getElementById('eventMultiplierSelect').value); var duration = parseInt(document.getElementById('eventDurationSelect').value); var endTime = new Date(Date.now() + duration * 1000); await db.collection('gameSettings').doc('event').set({ active: true, multiplier: multiplier, endTime: endTime.toISOString() }); eventActive = true; eventMultiplier = multiplier; eventEndTime = endTime; document.getElementById('eventBadge').style.display = 'block'; document.getElementById('eventBadge').innerHTML = '🎯 ИВЕНТ x' + multiplier; await addAdminLog('Запущен ивент', 'x' + multiplier + ' на ' + duration / 3600 + ' часов'); msg('✅ Ивент запущен!'); showAdmin(); }
+async function stopEvent() { await db.collection('gameSettings').doc('event').delete(); eventActive = false; document.getElementById('eventBadge').style.display = 'none'; await addAdminLog('Ивент остановлен', ''); msg('⛔ Ивент остановлен'); showAdmin(); }
+function updateAntiCheat() { maxClicksPerSecond = parseInt(document.getElementById('maxClicksSlider').value); document.getElementById('maxClicksDisplay').innerText = maxClicksPerSecond; localStorage.setItem('maxClicksPerSecond', maxClicksPerSecond); msg('✅ Лимит кликов: ' + maxClicksPerSecond + '/сек'); }
+async function showAdminTab(tab) { adminTab = tab; var btns = document.querySelectorAll('#adminTabs .btn-lb'); for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active'); if (tab === 'players') btns[0].classList.add('active'); else if (tab === 'bugs') btns[1].classList.add('active'); else if (tab === 'admins') btns[2].classList.add('active'); else if (tab === 'stats') btns[3].classList.add('active'); else if (tab === 'gifts') btns[4].classList.add('active'); else if (tab === 'logs') btns[5].classList.add('active'); else if (tab === 'event') btns[6].classList.add('active'); else if (tab === 'anticheat') btns[7].classList.add('active'); else btns[8].classList.add('active'); await showAdmin(); }
+async function showAdmin() { if (!isAdmin) return; document.getElementById('adminOverlay').classList.add('show'); document.getElementById('adminContent').innerHTML = 'Загрузка...';
+if (adminTab === 'bugs') { try { var bugs = await db.collection('bugs').orderBy('time','desc').limit(50).get(); var h = '<div style="font-size:14px;font-weight:700;margin-bottom:10px">🐛 Баг-репорты</div>'; if (bugs.empty) h += '<div style="color:#888">Нет багов</div>'; bugs.forEach(function(doc) { var b = doc.data(); h += '<div class="bug-card"><div class="bug-nick">👤 '+(b.nick||'Аноним')+'</div><div class="bug-desc">'+b.desc+'</div><div class="bug-time">🕐 '+new Date(b.time).toLocaleString()+'</div>'; if(b.replies) for(var ri=0;ri<b.replies.length;ri++){ var r=b.replies[ri]; h+='<div class="bug-reply"><div class="reply-from">'+(r.from||'')+':</div>'+r.text+'</div>'; } h+='<div style="display:flex;gap:5px;margin-top:5px"><button class="btn-buy" style="padding:5px 10px;font-size:11px" onclick="showReply(\''+doc.id+'\')">💬 Ответить</button><button class="btn-delete" style="padding:5px 10px;font-size:11px" onclick="deleteBug(\''+doc.id+'\')">❌</button></div></div>'; }); document.getElementById('adminContent').innerHTML = h; } catch(e) {} }
+else if (adminTab === 'admins') { try { var admins = await db.collection('admins').get(); var h = '<div style="font-size:14px;font-weight:700;margin-bottom:10px">👑 Администраторы</div>'; if(canManageAdmins()) h+='<div style="display:flex;gap:5px;margin-bottom:10px"><input type="email" id="newAdminEmail" placeholder="Email" style="flex:1"><select id="newAdminRole" style="width:80px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;padding:5px"><option value="moderator">Модер</option><option value="admin">Админ</option><option value="owner">Владелец</option></select><button class="btn-buy" style="padding:5px 10px;font-size:11px" onclick="addAdmin()">➕</button></div>'; admins.forEach(function(doc){ var d=doc.data(); h+='<div class="admin-player"><div class="info"><b>'+doc.id+'</b><br><small>'+(d.role||'moderator')+'</small></div>'; if(canManageAdmins() && d.role!=='owner') h+='<button class="btn-delete" style="padding:5px 10px;font-size:11px" onclick="removeAdmin(\''+doc.id+'\')">❌</button>'; h+='</div>'; }); document.getElementById('adminContent').innerHTML = h; } catch(e) {} }
+else if (adminTab === 'stats') { var stats = await getGlobalStats(); if(stats){ var sh='<div style="font-size:14px;font-weight:700;margin-bottom:10px">📊 Глобальная статистика</div><div class="admin-stats"><div class="admin-stat-card"><div class="value">'+stats.totalPlayers+'</div><div class="label">👥 Игроков</div></div><div class="admin-stat-card"><div class="value">'+stats.todayActive+'</div><div class="label">🟢 Сегодня</div></div><div class="admin-stat-card"><div class="value">'+Math.floor(stats.totalClicks/1000)+'K</div><div class="label">👆 Кликов</div></div></div><div class="admin-stats"><div class="admin-stat-card"><div class="value">'+Math.floor(stats.totalEarned/1000)+'K</div><div class="label">💰 Всего монет</div></div><div class="admin-stat-card"><div class="value">'+stats.totalRebirths+'</div><div class="label">🔄 Перерождений</div></div></div>'; document.getElementById('adminContent').innerHTML=sh; } else { document.getElementById('adminContent').innerHTML='<div style="color:#888">Ошибка статистики</div>'; } }
+else if (adminTab === 'gifts') { var gh = '<div style="font-size:14px;font-weight:700;margin-bottom:10px">🎁 Отправить подарок ВСЕМ игрокам</div><div class="admin-settings-section" style="margin-bottom:15px"><select id="giftAllType" style="width:100%;padding:8px;margin-bottom:8px"><option value="coins">💰 Монеты</option><option value="click">⚡ Сила клика</option><option value="auto">🏭 Авто-доход/сек</option></select><input type="number" id="giftAllAmount" placeholder="Количество" value="100" style="width:100%;padding:8px;margin-bottom:8px"><button class="btn btn-buy" style="width:100%" onclick="sendGiftToAllFlex()">🎁 Отправить всем</button></div><div style="font-size:14px;font-weight:700;margin-bottom:10px;margin-top:15px">🎁 Отправить подарок игроку (по email)</div><div class="admin-settings-section"><input type="email" id="giftPlayerEmail" placeholder="Email игрока" style="width:100%;padding:8px;margin-bottom:8px"><select id="giftPlayerType" style="width:100%;padding:8px;margin-bottom:8px"><option value="coins">💰 Монеты</option><option value="click">⚡ Сила клика</option><option value="auto">🏭 Авто-доход/сек</option></select><input type="number" id="giftPlayerAmount" placeholder="Количество" value="100" style="width:100%;padding:8px;margin-bottom:8px"><button class="btn btn-buy" style="width:100%" onclick="sendGiftToPlayerFlex()">🎁 Отправить игроку</button></div>'; document.getElementById('adminContent').innerHTML = gh; }
+else if (adminTab === 'logs') { try { var logsSnap = await db.collection('adminLogs').orderBy('time','desc').limit(50).get(); var lh = '<div style="font-size:14px;font-weight:700;margin-bottom:10px">📋 Последние действия</div>'; if(logsSnap.empty) lh += '<div style="color:#888;text-align:center;padding:20px">Нет записей</div>'; else { logsSnap.forEach(function(doc){ var log=doc.data(); lh+='<div class="admin-player" style="flex-direction:column;align-items:flex-start"><div><b>'+(log.adminNick||log.adminEmail||'Админ')+'</b> → '+log.action+'</div><div style="font-size:10px;color:#888">🕐 '+new Date(log.time).toLocaleString()+'</div>'+(log.details?'<div style="font-size:11px;color:#667eea">📝 '+log.details+'</div>':'')+'</div>'; }); } document.getElementById('adminContent').innerHTML = lh; } catch(e) {} }
+else if (adminTab === 'event') { var eh = '<div style="font-size:14px;font-weight:700;margin-bottom:10px">🎯 Ивент-режим</div><div class="admin-settings-section"><div style="margin-bottom:10px;padding:8px;background:#333;border-radius:10px">🎮 Текущий множитель: <b style="color:#44ff44">x'+(eventActive?eventMultiplier:'1')+'</b>'+(eventActive&&eventEndTime?'<br>⏱️ Действует до: <b>'+new Date(eventEndTime).toLocaleString()+'</b>':'')+'</div><select id="eventMultiplierSelect" style="width:100%;padding:8px;margin-bottom:8px"><option value="2">x2</option><option value="3">x3</option><option value="5">x5</option></select><select id="eventDurationSelect" style="width:100%;padding:8px;margin-bottom:8px"><option value="3600">1 час</option><option value="7200">2 часа</option><option value="21600">6 часов</option><option value="43200">12 часов</option><option value="86400">24 часа</option></select><button class="btn btn-buy" style="width:100%;margin-bottom:5px" onclick="startEvent()">🎯 Запустить ивент</button><button class="btn" style="width:100%;background:#ff4444" onclick="stopEvent()">⛔ Остановить</button></div>'; document.getElementById('adminContent').innerHTML = eh; }
+else if (adminTab === 'anticheat') { var ah = '<div style="font-size:14px;font-weight:700;margin-bottom:10px">🛡️ Анти-чит</div><div class="admin-settings-section"><div style="margin-bottom:10px;padding:8px;background:#333;border-radius:10px">⚡ Максимум кликов/сек: <b id="maxClicksDisplay" style="color:#44ff44">'+maxClicksPerSecond+'</b></div><input type="range" id="maxClicksSlider" min="5" max="50" step="1" value="'+maxClicksPerSecond+'" style="width:100%;margin-bottom:10px"><button class="btn btn-buy" style="width:100%" onclick="updateAntiCheat()">💾 Сохранить</button></div>'; document.getElementById('adminContent').innerHTML = ah; document.getElementById('maxClicksSlider').oninput = function() { document.getElementById('maxClicksDisplay').innerText = this.value; }; }
+else if (adminTab === 'messages') { var mh = '<div style="font-size:14px;font-weight:700;margin-bottom:10px">📢 Глобальные сообщения</div><div class="admin-settings-section"><select id="globalMsgType" style="width:100%;padding:8px;margin-bottom:8px"><option value="marquee">🏃 Бегущая строка</option><option value="notification">🔔 Уведомление всем</option></select><select id="globalMsgDuration" style="width:100%;padding:8px;margin-bottom:8px"><option value="0">♾️ Бесконечно</option><option value="10">⏱️ 10 секунд</option><option value="30">⏱️ 30 секунд</option><option value="60">⏱️ 1 минута</option><option value="300">⏱️ 5 минут</option><option value="3600">⏱️ 1 час</option></select><input type="text" id="globalMsgText" placeholder="Текст сообщения" style="width:100%;padding:8px;margin-bottom:8px"><button class="btn btn-buy" style="width:100%;margin-bottom:5px" onclick="sendGlobalMessageFromPanel()">📤 Отправить</button><button class="btn" style="width:100%;background:#ff4444" onclick="clearMarquee()">❌ Убрать бегущую строку</button></div>'; document.getElementById('adminContent').innerHTML = mh; }
+else { try { var s = await db.collection('users').orderBy('coins','desc').limit(50).get(); var h = '<div style="display:flex;gap:5px;margin-bottom:10px"><input type="text" id="searchPlayer" placeholder="Поиск" style="flex:1;padding:8px;background:#111;border:1px solid #333;border-radius:10px;color:#fff"><button class="btn-buy" onclick="searchPlayer()">🔍</button></div><div id="playersList"></div>'; var playersHtml = ''; s.forEach(function(doc){ var d=doc.data(); var vid=doc.id; playersHtml+='<div class="admin-player"><div class="info"><b>'+(d.nick||d.email||'Игрок')+'</b><br><small>💰'+Math.floor(d.coins||0)+' 👆'+(d.clicks||0)+'</small></div><div style="display:flex;gap:3px;flex-wrap:wrap"><button class="btn-verify" onclick="toggleVerify(\''+vid+'\','+(d.verified?false:true)+')">'+(d.verified?'✅':'☑')+'</button>'+(canWarn()?'<button class="btn-warn" onclick="showWarn(\''+vid+'\')">⚠️</button>':'')+(canBan()?'<button class="btn-ban" onclick="showBan(\''+vid+'\')">🚫</button>':'')+(canGiveResources()?'<button class="btn-give-resource" onclick="showGiveResource(\''+vid+'\')">💰+</button>':'')+(canBan()?'<button class="btn-clearwarn" onclick="clearWarnings(\''+vid+'\')">🗑️⚠️</button><button class="btn-unban" onclick="unbanPlayer(\''+vid+'\')">🔓</button>':'')+'</div></div>'; }); document.getElementById('adminContent').innerHTML = h+playersHtml; } catch(e) {} } }
+async function addAdmin() { var email = document.getElementById('newAdminEmail').value.trim(); var role = document.getElementById('newAdminRole').value; if (!email) return; try { await db.collection('admins').doc(email).set({ email: email, role: role }); await addAdminLog('Добавлен админ', email + ' (' + role + ')'); msg('✅ Админ добавлен'); showAdmin(); } catch (e) { msg('❌ Ошибка'); } }
+async function removeAdmin(email) { if (!confirm('Удалить админа ' + email + '?')) return; try { await db.collection('admins').doc(email).delete(); await addAdminLog('Удалён админ', email); msg('❌ Админ удалён'); showAdmin(); } catch (e) {} }
+async function clearWarnings(email) { if (!confirm('Снять предупреждения с ' + email + '?')) return; try { var ws = await db.collection('warnings').where('email','==',email).get(); ws.forEach(function(d){ d.ref.delete(); }); await addAdminLog('Сняты предупреждения', email); msg('🗑️ Предупреждения сняты'); showAdmin(); } catch (e) { msg('❌ Ошибка'); } }
+async function unbanPlayer(email) { if (!confirm('Разбанить ' + email + '?')) return; try { await db.collection('bans').doc(email).delete(); await sendNotification(email, 'reply', '🔓 Бан снят', 'Ваш бан был снят'); await addAdminLog('Снят бан', email); msg('🔓 Игрок разбанен'); showAdmin(); if (user && user.email === email) { isBanned = false; location.reload(); } } catch (e) { msg('❌ Ошибка'); } }
+function showWarn(email) { warnTarget = email; document.getElementById('warnReason').value = ''; document.getElementById('warnOverlay').classList.add('show'); }
+function showBan(email) { banTarget = email; document.getElementById('banReason').value = ''; document.getElementById('banOverlay').classList.add('show'); }
+function showGiveResource(email) { giveResourceTarget = email; document.getElementById('giveResourceAmount').value = '100'; document.getElementById('giveResourceOverlay').classList.add('show'); }
+async function giveResourceToPlayer() { var giveType = document.getElementById('giveResourceType').value; var amount = parseInt(document.getElementById('giveResourceAmount').value); if (isNaN(amount) || amount <= 0) { msg('Введите корректное количество'); return; } try { var userRef = db.collection('users').doc(giveResourceTarget); var userDoc = await userRef.get(); var userData = userDoc.data(); if (giveType === 'coins') { await userRef.update({ coins: (userData.coins || 0) + amount, earned: (userData.earned || 0) + amount }); await sendNotification(giveResourceTarget, 'reply', '💰 Пополнение', 'Вам начислено ' + amount + ' монет!'); await addAdminLog('Выданы монеты', giveResourceTarget + ' → ' + amount); msg('✅ Выдано ' + amount + ' монет'); } else if (giveType === 'click') { await userRef.update({ cp: (userData.cp || 1) + amount }); await sendNotification(giveResourceTarget, 'reply', '⚡ Усиление', 'Ваша сила клика увеличена на +' + amount + '!'); await addAdminLog('Выдана сила клика', giveResourceTarget + ' → +' + amount); msg('✅ Сила клика +' + amount); } else if (giveType === 'auto') { await userRef.update({ cps: (userData.cps || 0) + amount }); await sendNotification(giveResourceTarget, 'reply', '🏭 Авто-доход', 'Ваш автодоход увеличен на +' + amount + '/сек!'); await addAdminLog('Выдан автодоход', giveResourceTarget + ' → +' + amount); msg('✅ Автодоход +' + amount + '/сек'); } hideOverlay(); showAdmin(); } catch (e) { msg('❌ Ошибка: ' + e.message); } }
+function showReply(bugId) { replyBugId = bugId; document.getElementById('replyText').value = ''; document.getElementById('replyOverlay').classList.add('show'); }
+async function searchPlayer() { var query = document.getElementById('searchPlayer').value.toLowerCase(); if (!query) { showAdmin(); return; } try { var users = await db.collection('users').get(); var h = '<div style="margin-bottom:10px"><button class="btn-buy" onclick="showAdmin()">← Назад</button></div>'; var playersHtml = ''; users.forEach(function(doc) { var d = doc.data(); var vid = doc.id; if ((d.nick || '').toLowerCase().includes(query) || vid.toLowerCase().includes(query)) { playersHtml += '<div class="admin-player"><div class="info"><b>' + (d.nick || d.email || 'Игрок') + '</b><br><small>💰' + Math.floor(d.coins || 0) + ' 👆' + (d.clicks || 0) + '</small></div><div style="display:flex;gap:3px;flex-wrap:wrap"><button class="btn-verify" onclick="toggleVerify(\'' + vid + '\',' + (d.verified ? false : true) + ')">' + (d.verified ? '✅' : '☑') + '</button>' + (canWarn() ? '<button class="btn-warn" onclick="showWarn(\'' + vid + '\')">⚠️</button>' : '') + (canBan() ? '<button class="btn-ban" onclick="showBan(\'' + vid + '\')">🚫</button>' : '') + (canGiveResources() ? '<button class="btn-give-resource" onclick="showGiveResource(\'' + vid + '\')">💰+</button>' : '') + '</div></div>'; } }); if (!playersHtml) playersHtml = '<div style="color:#888;text-align:center;padding:20px">Не найден</div>'; document.getElementById('adminContent').innerHTML = h + playersHtml; } catch (e) {} }
+document.getElementById('confirmWarnBtn').onclick = async function() { var reason = document.getElementById('warnReason').value.trim() || 'Нарушение правил'; try { var docId = warnTarget + '_' + Date.now(); await db.collection('warnings').doc(docId).set({ email: warnTarget, reason: reason, time: new Date().toISOString(), by: nick }); await sendNotification(warnTarget, 'warn', '⚠️ Предупреждение', 'Причина: ' + reason); var ws = await db.collection('warnings').where('email', '==', warnTarget).get(); if (ws.size >= 3) await db.collection('bans').doc(warnTarget).set({ email: warnTarget, reason: '3 предупреждения', since: new Date().toISOString(), until: new Date(Date.now() + 7 * 86400000).toISOString(), permanent: false }); await addAdminLog('Выдано предупреждение', warnTarget + ' → ' + reason); loadNotifsInBackground(); hideOverlay(); msg('⚠️ Предупреждение выдано'); showAdmin(); } catch (e) { msg('❌ Ошибка'); } };
+document.getElementById('confirmBanBtn').onclick = async function() { var reason = document.getElementById('banReason').value.trim() || 'Нарушение правил'; var dur = parseInt(document.getElementById('banDuration').value); try { var banData = { email: banTarget, reason: reason, since: new Date().toISOString(), permanent: dur === 0 }; if (dur > 0) banData.until = new Date(Date.now() + dur * 60000).toISOString(); await db.collection('bans').doc(banTarget).set(banData); var banText = 'Причина: ' + reason + '. ' + (dur === 0 ? 'БАН НАВСЕГДА!' : 'До ' + new Date(Date.now() + dur * 60000).toLocaleString()); await sendNotification(banTarget, 'ban', '🚫 ВЫ ЗАБАНЕНЫ', banText); if (user && user.email === banTarget) { await checkBanStatus(); } await addAdminLog('Бан игрока', banTarget + ' → ' + reason); loadNotifsInBackground(); hideOverlay(); msg('🚫 Игрок забанен'); showAdmin(); } catch (e) { msg('❌ Ошибка'); } };
+document.getElementById('confirmReplyBtn').onclick = async function() { var text = document.getElementById('replyText').value.trim(); if (!text) return; try { var bugRef = db.collection('bugs').doc(replyBugId); var bugDoc = await bugRef.get(); var bugData = bugDoc.data(); var replies = bugData.replies || []; replies.push({ from: 'Админ ' + nick, text: text, time: new Date().toISOString() }); await bugRef.update({ replies: replies }); if (bugData.email) { await sendNotification(bugData.email, 'reply', '💬 Ответ на баг-репорт', text); } else { await sendNotification(null, 'reply', '💬 Ответ на баг-репорт', text); } await addAdminLog('Ответ на баг', 'ID: ' + replyBugId); loadNotifsInBackground(); hideOverlay(); msg('✅ Ответ отправлен'); showAdmin(); } catch (e) { msg('❌ Ошибка'); } };
+document.getElementById('confirmGiveResourceBtn').onclick = giveResourceToPlayer;
+async function deleteBug(id) { try { await db.collection('bugs').doc(id).delete(); showAdmin(); } catch (e) {} }
+async function toggleVerify(uid, status) { try { await db.collection('users').doc(uid).update({ verified: status }); await addAdminLog(status ? 'Верификация' : 'Снятие верификации', uid); msg(status ? '✅ Верифицирован' : '❌ Снято'); showAdmin(); } catch (e) {} }
+async function sendBugReport(desc) { try { var bugData = { nick: (nick && nick !== 'Игрок') ? nick : (user ? (user.email ? user.email.split('@')[0] : 'Аноним') : 'Аноним'), email: user ? user.email : '', desc: desc, time: new Date().toISOString(), status: 'open', replies: [] }; await db.collection('bugs').add(bugData); return true; } catch (e) { return false; } }
+async function deleteAccount() { var confirmEmail = document.getElementById('deleteEmailConfirm').value.trim(); if (confirmEmail !== user.email) { msg('Email не совпадает'); return; } try { await db.collection('users').doc(user.email).delete(); await db.collection('admins').doc(user.email).delete(); var bugs = await db.collection('bugs').where('email','==',user.email).get(); bugs.forEach(function(d){ d.ref.delete(); }); auth.currentUser.delete(); hideOverlay(); msg('🗑️ Аккаунт удалён'); logout(); } catch (e) { msg('Ошибка'); } }
+async function loadLB() { try { var s = await db.collection('users').orderBy(lbType,'desc').limit(20).get(); var h = '<div style="padding:10px"><div style="display:flex;gap:5px;margin-bottom:10px;justify-content:center"><button class="btn-lb'+(lbType==='coins'?' active':'')+'" onclick="setLB(\'coins\')">💰 Монеты</button><button class="btn-lb'+(lbType==='clicks'?' active':'')+'" onclick="setLB(\'clicks\')">👆 Клики</button><button class="btn-lb'+(lbType==='rebirths'?' active':'')+'" onclick="setLB(\'rebirths\')">🔄 Перерождения</button></div>'; var docs=[]; s.forEach(function(doc){docs.push(doc.data());}); docs.sort(function(a,b){return(b[lbType]||0)-(a[lbType]||0);}); if(docs.length===0) h+='<div style="text-align:center;color:#888;padding:20px">Пусто</div>'; else for(var i=0;i<Math.min(docs.length,20);i++){ var dt=docs[i]; h+='<div class="lb-row"><div class="lb-rank">'+(i+1)+'</div><div class="lb-name">'+(dt.nick||dt.email||'Игрок')+(dt.verified?' <span class="verified-check"></span>':'')+'</div><div class="lb-score">'+(dt[lbType]||0)+'</div></div>'; } h+='</div>'; document.getElementById('leaderboardSection').innerHTML=h; } catch(e){} }
+function setLB(t) { lbType=t; loadLB(); }
+function showAgreement() { document.getElementById('agreementText').innerText = AGREEMENT_TEXT; document.getElementById('agreementOverlay').classList.add('show'); }
+function hideOverlay() { ['authOverlay','warnOverlay','banOverlay','replyOverlay','agreementOverlay','adminOverlay','saveOverlay','loadOverlay','nickOverlay','resetOverlay','deleteAccountOverlay','massNotifyOverlay','giveResourceOverlay','globalMsgOverlay','giftOverlay','profileViewOverlay','friendRequestsOverlay'].forEach(function(id){ var el=document.getElementById(id); if(el)el.classList.remove('show'); }); }
+function showAuth() { document.getElementById('authTitle').textContent = '🔐 Вход / Регистрация'; document.getElementById('authEmail').value = ''; document.getElementById('authPass').value = ''; document.getElementById('authPass').style.display = 'block'; document.getElementById('authError').textContent = ''; document.getElementById('authSuccess').textContent = ''; document.getElementById('authBtns').innerHTML = '<button class="btn btn-buy" id="loginBtn">Войти</button><button class="btn" style="background:#44aa44" id="registerBtn">Регистрация</button>'; document.getElementById('agreementCheck').style.display = 'none'; document.getElementById('agreeCheckbox').checked = false; document.getElementById('forgotLink').style.display = 'block'; document.getElementById('backLink').style.display = 'none'; document.getElementById('authOverlay').classList.add('show'); document.getElementById('loginBtn').onclick = function() { var email = document.getElementById('authEmail').value.trim(), pass = document.getElementById('authPass').value; if (!email || !pass) { document.getElementById('authError').textContent = 'Заполните все поля'; return; } auth.signInWithEmailAndPassword(email, pass).then(function(r) { user = r.user; hideOverlay(); loadCloud().then(function(loaded) { if (!loaded) saveCloud(); updateTopBar(); checkAdmin(); checkWarnings(); checkEventStatus(); checkGlobalMessage(); loadNotifsInBackground(); msg('✅ Вы вошли'); }); }).catch(function(e) { document.getElementById('authError').textContent = e.code === 'auth/user-not-found' ? 'Аккаунт не найден' : e.code === 'auth/wrong-password' ? 'Неверный пароль' : e.message; }); }; document.getElementById('registerBtn').onclick = function() { document.getElementById('agreementCheck').style.display = 'flex'; document.getElementById('authBtns').innerHTML = '<button class="btn" style="background:#44aa44;width:100%" id="confirmRegisterBtn">✅ Зарегистрироваться</button>'; document.getElementById('forgotLink').style.display = 'none'; document.getElementById('confirmRegisterBtn').onclick = function() { if (!document.getElementById('agreeCheckbox').checked) { document.getElementById('authError').textContent = 'Примите соглашение'; return; } var email = document.getElementById('authEmail').value.trim(), pass = document.getElementById('authPass').value; if (!email || !pass) { document.getElementById('authError').textContent = 'Заполните все поля'; return; } if (pass.length < 6) { document.getElementById('authError').textContent = 'Пароль минимум 6 символов'; return; } auth.createUserWithEmailAndPassword(email, pass).then(function(r) { user = r.user; nick = email.split('@')[0]; r.user.sendEmailVerification(); msg('📧 Проверьте почту!'); hideOverlay(); updateTopBar(); saveCloud(); saveLocal(); }).catch(function(e) { document.getElementById('authError').textContent = e.code === 'auth/email-already-in-use' ? 'Email уже зарегистрирован' : e.message; }); }; }; }
+function showResetPassword() { document.getElementById('authTitle').textContent = '🔑 Сброс пароля'; document.getElementById('authPass').style.display = 'none'; document.getElementById('authError').textContent = ''; document.getElementById('authSuccess').textContent = ''; document.getElementById('authBtns').innerHTML = '<button class="btn btn-buy" id="resetPassBtn" style="width:100%">📧 Отправить ссылку</button>'; document.getElementById('agreementCheck').style.display = 'none'; document.getElementById('forgotLink').style.display = 'none'; document.getElementById('backLink').style.display = 'block'; document.getElementById('resetPassBtn').onclick = function() { var email = document.getElementById('authEmail').value.trim(); if (!email) { document.getElementById('authError').textContent = 'Введите email'; return; } auth.sendPasswordResetEmail(email).then(function() { document.getElementById('authSuccess').textContent = '✅ Письмо отправлено!'; }).catch(function(e) { document.getElementById('authError').textContent = e.message; }); }; }
+function logout() { auth.signOut(); user = null; isAdmin = false; isVerified = false; isBanned = false; playerWarnings = []; localStorage.removeItem('clicker_save'); coins = 0; cp = 1; mult = 1; cps = 0; earned = 0; clicks = 0; rebirths = 0; rBonus = 0; comboC = 0; comboM = 1; nick = 'Игрок'; skin = '💎'; theme = 'dark'; unlockedSkins = ['💎']; for (var i = 0; i < items.length; i++) items[i].o = 0; for (var k in potions) { potions[k].a = false; potions[k].t = 0; } applyTheme(); document.getElementById('clickButton').textContent = '💎'; updateTopBar(); updateUI(); msg('👋 Вы вышли'); }
+function updateTopBar() { document.getElementById('topNick').textContent = nick; document.getElementById('profileNick').textContent = nick; document.getElementById('profileLevel').textContent = 'Уровень ' + lvl(); document.getElementById('rebirthBadge').style.display = rebirths > 0 ? 'inline-block' : 'none'; document.getElementById('rebirthCount').textContent = rebirths; document.getElementById('verifiedCheck').style.display = isVerified ? 'inline-block' : 'none'; document.getElementById('adminBtn').style.display = isAdmin ? 'inline-block' : 'none'; var b = document.getElementById('authBtn'); if (user && !user.isAnonymous) { b.textContent = 'Выйти'; b.onclick = logout; } else { b.textContent = '🔐 Войти'; b.onclick = showAuth; } }
+function changeNick() { document.getElementById('nickInput').value = nick; document.getElementById('nickOverlay').classList.add('show'); }
+document.getElementById('confirmNickBtn').onclick = function() { var n = document.getElementById('nickInput').value.trim(); if (!n) { msg('Ник пуст'); return; } nick = n; hideOverlay(); updateTopBar(); saveLocal(); saveCloud(); msg('Ник: ' + nick); };
+auth.onAuthStateChanged(async function(u) { user = u; updateTopBar(); updateUI(); if (user && user.email) { var isBannedNow = await checkBanStatus(); if (isBannedNow) return; var loaded = await loadCloud(); if (!loaded) saveCloud(); await checkAdmin(); await checkWarnings(); await checkEventStatus(); await checkGlobalMessage(); await loadNotifsInBackground(); updateUI(); } else { logout(); } });
+function doReset() { if (checkBanAndRedirect()) return; document.getElementById('resetOverlay').classList.add('show'); }
+document.getElementById('confirmResetBtn').onclick = function() { if (isBanned) { showBanMessageAndLogout(); return; } coins = 0; cp = 1; mult = 1; cps = 0; earned = 0; clicks = 0; rebirths = 0; rBonus = 0; comboC = 0; comboM = 1; skin = '💎'; theme = 'dark'; unlockedSkins = ['💎']; for (var i = 0; i < items.length; i++) items[i].o = 0; for (var k in potions) { potions[k].a = false; potions[k].t = 0; } applyTheme(); document.getElementById('clickButton').textContent = '💎'; saveLocal(); saveCloud(); hideOverlay(); updateUI(); updateTopBar(); msg('Сброшено'); };
+function doRebirth() { if (checkBanAndRedirect()) return; var r = rr(); if (coins < r) { msg('Нужно ' + r + ' монет'); return; } coins = 0; cp = 1; cps = 0; earned = 0; clicks = 0; for (var i = 0; i < items.length; i++) items[i].o = 0; for (var k in potions) { potions[k].a = false; potions[k].t = 0; } rebirths++; rBonus += 0.5; mult = 1 + rBonus; comboC = 0; comboM = 1; if (rebirths % 2 === 0 && unlockedSkins.length < allSkins.length) { var locked = allSkins.filter(function(s) { return unlockedSkins.indexOf(s) === -1; }); if (locked.length > 0) { var ns = locked[Math.floor(Math.random() * locked.length)]; unlockedSkins.push(ns); msg('Новый скин: ' + ns + '!'); } } saveLocal(); saveCloud(); updateUI(); msg('Перерождение ' + rebirths + '!'); }
+function spawnParticles(x, y, c) { var area = document.getElementById('clickerArea'), emojis = ['✨','💫','⭐','🌟','💎','🔥','💥','🎉']; for (var i = 0; i < c; i++) { var p = document.createElement('div'); p.className = 'particle'; p.textContent = emojis[Math.floor(Math.random() * emojis.length)]; p.style.left = x + 'px'; p.style.top = y + 'px'; var a = Math.random() * Math.PI * 2, d = 30 + Math.random() * 100; p.style.setProperty('--dx', Math.cos(a) * d + 'px'); p.style.setProperty('--dy', Math.sin(a) * d + 'px'); area.appendChild(p); setTimeout(function() { p.remove(); }, 800); } }
+
+// ========== ВКЛАДКИ ==========
+async function showProfile(email) {
+    try {
+        var userDoc = await db.collection('users').doc(email).get();
+        if (!userDoc.exists) { msg('Игрок не найден'); return; }
+        var data = userDoc.data();
+        var displayNick = data.nick || email.split('@')[0];
+        var html = '<div style="text-align:center">';
+        html += '<div style="font-size:40px">👤</div>';
+        html += '<div style="font-size:20px;font-weight:700">' + displayNick + '</div>';
+        if (data.verified) html += '<div><span class="verified-check"></span> Верифицирован</div>';
+        html += '<div style="margin-top:10px;text-align:left">';
+        html += '<div>💰 Монет: ' + Math.floor(data.coins || 0) + '</div>';
+        html += '<div>👆 Кликов: ' + (data.clicks || 0) + '</div>';
+        html += '<div>🔄 Перерождений: ' + (data.rebirths || 0) + '</div>';
+        html += '<div>⚡ Сила клика: ' + (data.cp || 1) + '</div>';
+        html += '<div>🏭 Авто-доход: ' + (data.cps || 0) + '/сек</div>';
+        html += '</div></div>';
+        document.getElementById('viewProfileContent').innerHTML = html;
+        document.getElementById('profileViewOverlay').classList.add('show');
+    } catch(e) { msg('Ошибка загрузки профиля'); }
+}
+async function searchPlayers() {
+    var query = document.getElementById('searchPlayerInput').value.toLowerCase();
+    if (!query) { document.getElementById('searchResults').innerHTML = ''; return; }
+    try {
+        var users = await db.collection('users').get();
+        var results = [];
+        users.forEach(function(doc) {
+            var d = doc.data();
+            var displayNick = d.nick || doc.id.split('@')[0];
+            if ((displayNick.toLowerCase().includes(query) || doc.id.toLowerCase().includes(query))) {
+                if (doc.id !== user.email) results.push({ email: doc.id, nick: displayNick });
+            }
+        });
+        var html = '<div style="margin-top:10px">';
+        if (results.length === 0) html += '<div style="color:#888;text-align:center;padding:10px">Ничего не найдено</div>';
+        else {
+            for (var i = 0; i < results.length; i++) {
+                html += '<div class="search-result" style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#1a1a1a;border-radius:10px;margin-bottom:8px">';
+                html += '<div><b>' + results[i].nick + '</b></div>';
+                html += '<div style="display:flex;gap:5px">';
+                html += '<button class="btn-buy" style="padding:5px 8px;font-size:11px" onclick="sendFriendRequest(\'' + results[i].email + '\')">➕ В друзья</button>';
+                html += '<button class="btn-buy" style="padding:5px 8px;font-size:11px" onclick="showProfile(\'' + results[i].email + '\')">👤</button>';
+                html += '</div></div>';
+            }
+        }
+        html += '</div>';
+        document.getElementById('searchResults').innerHTML = html;
+    } catch(e) {}
+}
+function openGiftDialog(email) { giftTargetEmail = email; document.getElementById('giftAmount').value = '100'; document.getElementById('giftMessage').value = ''; document.getElementById('giftOverlay').classList.add('show'); }
+document.getElementById('sendGiftBtn').onclick = function() { var type = document.getElementById('giftType').value; var amount = parseInt(document.getElementById('giftAmount').value); var message = document.getElementById('giftMessage').value; if (type === 'coins' && (isNaN(amount) || amount <= 0)) { msg('Введите количество монет'); return; } sendGift(giftTargetEmail, type, amount, message); hideOverlay(); };
+
+async function renderSocialSection() {
+    var container = document.getElementById('socialSection'); if (!container) return;
+    container.innerHTML = '<div style="text-align:center;padding:20px"><div style="font-size:30px">👥</div><div>Загрузка...</div></div>';
+    if (!user || !user.email) { container.innerHTML = '<div style="text-align:center;padding:40px;color:#888">👥 Войдите в аккаунт, чтобы видеть соцсеть</div>'; return; }
+    
+    var searchHtml = '<div class="admin-settings-section" style="margin-bottom:15px"><div style="display:flex;gap:8px"><input type="text" id="searchPlayerInput" placeholder="Поиск по нику" style="flex:1;padding:8px;background:#111;border:1px solid #333;border-radius:10px;color:#fff"><button class="btn-buy" onclick="searchPlayers()">🔍</button></div><div id="searchResults"></div></div>';
+    
+    var friends = await getFriendsList();
+    var friendsHtml = '<div class="admin-settings-section"><div style="font-weight:700;margin-bottom:8px">👥 Друзья (' + friends.length + ')</div>';
+    if (friends.length === 0) friendsHtml += '<div style="color:#888;text-align:center;padding:10px">Нет друзей</div>';
+    else {
+        for (var i = 0; i < friends.length; i++) {
+            var f = friends[i];
+            friendsHtml += '<div class="friend-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#1a1a1a;border-radius:10px;margin-bottom:8px"><div><b>' + f.nick + '</b>' + (f.data.verified ? ' <span class="verified-check"></span>' : '') + '</div><div style="display:flex;gap:5px"><button class="btn-buy" style="padding:5px 8px;font-size:11px" onclick="showProfile(\'' + f.email + '\')">👤</button><button class="btn-buy" style="padding:5px 8px;font-size:11px" onclick="openGiftDialog(\'' + f.email + '\')">🎁</button><button class="btn-delete" style="padding:5px 8px;font-size:11px" onclick="removeFriend(\'' + f.email + '\')">❌</button></div></div>';
+        }
+    }
+    friendsHtml += '</div>';
+    
+    var requestsSnap = await db.collection('friendRequests').where('to', '==', user.email).where('status', '==', 'pending').get();
+    var requestsHtml = '<div class="admin-settings-section" style="margin-top:10px"><div style="font-weight:700;margin-bottom:8px">📨 Заявки в друзья (' + requestsSnap.size + ')</div>';
+    if (requestsSnap.size === 0) requestsHtml += '<div style="color:#888;text-align:center;padding:10px">Нет заявок</div>';
+    else {
+        for (var doc of requestsSnap.docs) {
+            var req = doc.data();
+            requestsHtml += '<div class="friend-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#1a1a1a;border-radius:10px;margin-bottom:8px"><div><b>' + req.fromNick + '</b></div><div><button class="btn-buy" style="padding:5px 8px;font-size:11px" onclick="acceptFriendRequest(\'' + doc.id + '\', \'' + req.from + '\')">✅ Принять</button></div></div>';
+        }
+    }
+    requestsHtml += '</div>';
+    
+    var giftsSnap = await db.collection('gifts').where('to', '==', user.email).where('claimed', '==', false).get();
+    var giftsHtml = '<div class="admin-settings-section" style="margin-top:10px"><div style="font-weight:700;margin-bottom:8px">🎁 Подарки (' + giftsSnap.size + ')</div>';
+    if (giftsSnap.size === 0) giftsHtml += '<div style="color:#888;text-align:center;padding:10px">Нет подарков</div>';
+    else {
+        for (var doc of giftsSnap.docs) {
+            var g = doc.data();
+            var giftText = g.type === 'coins' ? g.amount + ' монет' : g.type === 'potion_cb' ? 'зелье клика' : g.type === 'potion_ab' ? 'зелье скорости' : 'зелье богатства';
+            giftsHtml += '<div class="friend-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#1a1a1a;border-radius:10px;margin-bottom:8px"><div><b>От ' + g.fromNick + '</b><br><small>' + giftText + (g.message ? '<br>📝 ' + g.message : '') + '</small></div><div><button class="btn-buy" style="padding:5px 8px;font-size:11px" onclick="claimGift(\'' + doc.id + '\', ' + JSON.stringify(g).replace(/"/g, '&quot;') + ')">🎁 Забрать</button></div></div>';
+        }
+    }
+    giftsHtml += '</div>';
+    
+    container.innerHTML = searchHtml + friendsHtml + requestsHtml + giftsHtml;
+}
+
+async function renderClanSection() {
+    var container = document.getElementById('clanSection'); if (!container) return;
+    container.innerHTML = '<div style="text-align:center;padding:20px"><div style="font-size:30px">⚔️</div><div>Загрузка...</div></div>';
+    if (!user || !user.email) { container.innerHTML = '<div style="text-align:center;padding:40px;color:#888">⚔️ Войдите в аккаунт, чтобы видеть кланы</div>'; return; }
+    
+    var myClan = await getMyClan();
+    if (myClan) {
+        var isLeader = (myClan.leader === user.email);
+        var html = '<div class="clan-info"><h4>⚔️ ' + myClan.name + ' [' + myClan.tag + ']</h4>';
+        var leaderDoc = await db.collection('users').doc(myClan.leader).get();
+        var leaderNick = leaderDoc.exists ? (leaderDoc.data().nick || myClan.leader.split('@')[0]) : myClan.leader.split('@')[0];
+        html += '<div>👑 Лидер: ' + (myClan.leader === user.email ? 'Вы ' : leaderNick) + (myClan.leader !== user.email ? ' <span class="verified-check"></span>' : '') + ' <span class="leader-crown">👑</span></div>';
+        html += '<div>👥 Участников: ' + myClan.members.length + '</div>';
+        html += '<div>📅 Создан: ' + new Date(myClan.created).toLocaleDateString() + '</div>';
+        html += '<div>🎁 Бонус клана: <b style="color:#44ff44">+' + Math.round((myClan.bonus - 1) * 100) + '%</b> к доходу</div>';
+        html += '<div>🔓 Статус: ' + (myClan.isOpen ? '<span style="color:#44ff44">Открытый</span>' : '<span style="color:#ff4444">Закрытый (по приглашениям)</span>') + '</div>';
+        if (isLeader) {
+            html += '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">';
+            html += '<button class="btn btn-buy" style="flex:1;padding:5px" onclick="toggleClanOpenness()">' + (myClan.isOpen ? '🔒 Закрыть клан' : '🔓 Открыть клан') + '</button>';
+            html += '<button class="btn btn-buy" style="flex:1;padding:5px" onclick="showInviteDialog()">📨 Пригласить</button>';
+            html += '</div>';
+        }
+        html += '</div>';
+        html += '<div class="admin-settings-section"><div style="font-weight:700;margin-bottom:8px">👥 Участники</div>';
+        for (var i = 0; i < myClan.members.length; i++) {
+            var memberEmail = myClan.members[i];
+            var memberDoc = await db.collection('users').doc(memberEmail).get();
+            var memberNick = memberDoc.exists ? (memberDoc.data().nick || memberEmail.split('@')[0]) : memberEmail.split('@')[0];
+            var isMemberVerified = memberDoc.exists && memberDoc.data().verified === true;
+            var isMemberLeader = (memberEmail === myClan.leader);
+            html += '<div class="clan-member-card" style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#1a1a1a;border-radius:8px;margin-bottom:5px">';
+            html += '<div><b>' + memberNick + '</b>';
+            if (isMemberVerified) html += ' <span class="verified-check"></span>';
+            if (isMemberLeader) html += ' <span class="leader-crown">👑</span>';
+            html += '</div><div style="display:flex;gap:5px">';
+            html += '<button class="btn-buy" style="padding:3px 8px;font-size:11px" onclick="showProfile(\'' + memberEmail + '\')">👤</button>';
+            if (isLeader && memberEmail !== user.email) {
+                html += '<button class="btn-delete" style="padding:3px 8px;font-size:11px" onclick="kickFromClan(\'' + memberEmail + '\')">❌ Кик</button>';
+            }
+            html += '</div></div>';
+        }
+        html += '</div>';
+        if (isLeader) {
+            html += '<div class="admin-settings-section"><button class="btn" style="background:#ff4444;width:100%;margin-top:10px" onclick="deleteClan()">🗑️ Удалить клан</button></div>';
+        } else {
+            html += '<div class="admin-settings-section"><button class="btn" style="background:#ff4444;width:100%;margin-top:10px" onclick="leaveClan()">🚪 Выйти из клана</button></div>';
+        }
+        container.innerHTML = html;
+    } else {
+        var html = '<div class="admin-settings-section"><div style="font-weight:700;margin-bottom:8px">💰 Создать клан</div>';
+        html += '<div style="color:#888;font-size:12px;margin-bottom:8px">Стоимость: 10000 монет</div>';
+        html += '<button class="btn btn-buy" style="width:100%;margin-bottom:15px" onclick="createClan()">🏰 Создать клан</button></div>';
+        html += '<div class="admin-settings-section"><div style="font-weight:700;margin-bottom:8px">🔍 Поиск кланов</div>';
+        html += '<div style="display:flex;gap:8px"><input type="text" id="clanSearchInput" placeholder="Название или тег" style="flex:1;padding:8px;background:#111;border:1px solid #333;border-radius:10px;color:#fff"><button class="btn-buy" onclick="searchClans()">🔍</button></div>';
+        html += '<div id="clanSearchResults"></div></div>';
+        html += '<div id="clansList" class="admin-settings-section" style="margin-top:10px"><div style="font-weight:700;margin-bottom:8px">📋 Открытые кланы</div>';
+        var clansSnap = await db.collection('clans').limit(20).get();
+        if (clansSnap.empty) html += '<div style="color:#888;text-align:center;padding:10px">Нет открытых кланов</div>';
+        else {
+            for (var doc of clansSnap.docs) { var c = doc.data(); if (c.isOpen) { html += '<div class="clan-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#1a1a1a;border-radius:10px;margin-bottom:8px"><div><b>' + c.name + '</b> (' + c.tag + ')<br><small>👥 ' + c.members.length + ' участников</small></div><button class="btn-buy" style="padding:5px 10px" onclick="joinClan(\'' + doc.id + '\', \'' + c.name + '\')">Вступить</button></div>'; } }
+        }
+        html += '</div>';
+        container.innerHTML = html;
+    }
+}
+
+function renderBugSection() {
+    var container = document.getElementById('bugSection'); if (!container) return; container.innerHTML = '';
+    var wrapper = document.createElement('div'); wrapper.style.cssText = 'text-align:center;padding:20px';
+    var icon = document.createElement('div'); icon.style.fontSize = '50px'; icon.textContent = '🐛';
+    var title = document.createElement('div'); title.style.cssText = 'font-size:18px;font-weight:700;margin:10px 0'; title.textContent = 'Баг-репорт';
+    var subtitle = document.createElement('div'); subtitle.style.cssText = 'color:#888;margin-bottom:10px'; subtitle.textContent = 'Нашли ошибку? Сообщите!';
+    var textarea = document.createElement('textarea'); textarea.id = 'bugDesc'; textarea.placeholder = 'Опишите проблему...'; textarea.style.cssText = 'width:100%;height:80px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;padding:10px;font-size:14px;resize:none;margin-bottom:10px';
+    var button = document.createElement('button'); button.className = 'btn btn-buy'; button.style.width = '100%'; button.textContent = '📤 Отправить';
+    button.onclick = async function() { var desc = textarea.value.trim(); if (!desc || desc.length < 3) { msg('Опишите проблему (мин 3 символа)'); return; } var success = await sendBugReport(desc); if (success) { textarea.value = ''; msg('✅ Баг-репорт отправлен!'); } else { msg('❌ Ошибка отправки'); } };
+    var currentNick = (nick && nick !== 'Игрок') ? nick : (user ? (user.email ? user.email.split('@')[0] : 'Аноним') : 'Аноним');
+    var nickInfo = document.createElement('div'); nickInfo.style.cssText = 'color:#888;font-size:10px;margin-top:8px'; nickInfo.innerHTML = 'Ваш ник: <b>' + currentNick + '</b>';
+    wrapper.appendChild(icon); wrapper.appendChild(title); wrapper.appendChild(subtitle); wrapper.appendChild(textarea); wrapper.appendChild(button); wrapper.appendChild(nickInfo); container.appendChild(wrapper);
+}
+function updateProfileSection() {
+    var profileHtml = '<div style="text-align:center;padding:20px"><div style="font-size:60px">👤</div><div style="font-size:20px;font-weight:700">' + nick + (isVerified ? ' <span class="verified-check"></span>' : '') + '</div><div style="color:#888">Уровень ' + lvl() + '</div><div style="display:flex;gap:10px;margin:20px 0;justify-content:center"><div style="background:#1a1a1a;border-radius:10px;padding:15px;flex:1;max-width:140px"><div style="font-size:20px;font-weight:700;color:#667eea">' + Math.floor(earned) + '</div><div style="font-size:10px;color:#888">💰 Всего монет</div></div><div style="background:#1a1a1a;border-radius:10px;padding:15px;flex:1;max-width:140px"><div style="font-size:20px;font-weight:700;color:#667eea">' + clicks + '</div><div style="font-size:10px;color:#888">👆 Кликов</div></div></div><div style="background:#1a1a1a;border-radius:10px;padding:10px;text-align:left;font-size:13px"><div>💎 Скин: ' + skin + '</div><div>🎨 Тема: ' + (theme === 'dark' ? '🌙 Тёмная' : theme === 'light' ? '☀️ Светлая' : '💜 Неон') + '</div><div>⭐ Перерождений: ' + rebirths + '</div><div>⚡ Сила клика: ' + cp + '</div><div>🏭 Авто-доход: ' + cps + '/сек</div><div>📋 Версия: ' + APP_VERSION + '</div></div><button class="btn btn-buy" style="margin-top:15px;width:100%" onclick="changeNick()">✏️ Сменить ник</button><button class="btn" style="background:#333;margin-top:5px;width:100%" onclick="showAgreement()">📜 Соглашение</button>' + (user && user.email ? '<button class="btn" style="background:#ff3b30;margin-top:5px;width:100%" onclick="document.getElementById(\'deleteAccountOverlay\').classList.add(\'show\')">🗑️ Удалить аккаунт</button>' : '') + '</div>';
+    document.getElementById('profileSection').innerHTML = profileHtml;
+}
+function updateUI() {
+    if (checkBanAndRedirect()) return;
+    var se = document.getElementById('score'); se.textContent = Math.floor(coins); se.classList.add('pop'); setTimeout(function() { se.classList.remove('pop'); }, 150);
+    document.getElementById('perSecond').textContent = (eCPS() * eMult()).toFixed(1) + '/сек';
+    document.getElementById('clickPower').textContent = eClick();
+    document.getElementById('multiplierDisplay').textContent = 'x' + eMult().toFixed(1);
+    document.getElementById('totalEarned').textContent = Math.floor(earned);
+    document.getElementById('comboText').textContent = comboM > 1 ? '🔥 Комбо x' + comboC + '! (x' + comboM + ')' : '';
+    var h = '';
+    for (var i = 0; i < items.length; i++) { var it = items[i], c = Math.floor(it.c * Math.pow(1.5 + i * 0.2, it.o)); h += '<div class="shop-item"><div class="item-info"><div class="item-name">' + it.n + ' (' + it.o + ')</div><div class="item-desc">' + it.d + '</div><div class="item-cost">💰 ' + c + '</div></div><button class="btn btn-buy' + (coins >= c ? '' : ' locked') + '" data-idx="' + i + '">Купить</button></div>'; }
+    document.getElementById('shopSection').innerHTML = h;
+    var bs = document.querySelectorAll('#shopSection .btn-buy');
+    for (var j = 0; j < bs.length; j++) { bs[j].onclick = function() { if (checkBanAndRedirect()) return; var idx = parseInt(this.getAttribute('data-idx')), it = items[idx], c = Math.floor(it.c * Math.pow(1.5 + idx * 0.2, it.o)); if (coins < c) return; coins -= c; it.o++; if (it.ty === 'click') cp += it.b; if (it.ty === 'auto') cps += it.b; if (it.ty === 'multi') mult += it.b; saveLocal(); saveCloud(); updateUI(); updateProfileSection(); }; }
+    var ph = '';
+    for (var k in potions) { var p = potions[k], c = pc(p), cls = 'btn btn-potion', txt = '💰 ' + c; if (p.a) { cls += ' active'; txt = 'Активно ' + Math.ceil(p.t) + 'с'; } else if (coins < c) cls += ' locked'; ph += '<div class="shop-item"><div class="item-info"><div class="item-name">' + p.n + '</div><div class="item-desc">' + p.d + '</div></div><button class="' + cls + '" data-p="' + k + '">' + txt + '</button></div>'; }
+    document.getElementById('potionsSection').innerHTML = ph;
+    var pbs = document.querySelectorAll('#potionsSection .btn-potion');
+    for (var pj = 0; pj < pbs.length; pj++) { pbs[pj].onclick = function() { if (checkBanAndRedirect()) return; var key = this.getAttribute('data-p'), po = potions[key], c = pc(po); if (po.a || coins < c) return; coins -= c; po.a = true; po.t = po.dur; saveLocal(); saveCloud(); updateUI(); updateProfileSection(); }; }
+    var req = rr(); document.getElementById('rebirthSection').innerHTML = '<div style="text-align:center;padding:20px"><div style="font-size:50px">🔄</div><div style="font-size:18px">Перерождение</div><div style="color:#888">Бонус: x' + (1 + rBonus).toFixed(1) + '</div><div style="color:#888">Нужно: ' + req + ' 💰</div><button class="btn-rebirth' + (coins >= req ? '' : ' locked') + '" onclick="doRebirth()">Переродиться</button></div>';
+    var sh = '<div style="text-align:center;padding:10px"><div style="font-weight:700">Скины</div><div class="skin-grid">';
+    for (var si = 0; si < allSkins.length; si++) { var s = allSkins[si], unlocked = unlockedSkins.indexOf(s) !== -1; sh += '<button class="skin-btn' + (s === skin ? ' active' : '') + (!unlocked ? ' locked' : '') + '" data-skin="' + s + '"' + (unlocked ? '' : ' disabled') + '>' + s + '</button>'; }
+    sh += '</div><div style="margin-top:12px"><div style="font-weight:700">Тема</div><button class="theme-btn' + (theme === 'dark' ? ' active' : '') + '" data-theme="dark">🌙</button><button class="theme-btn' + (theme === 'light' ? ' active' : '') + '" data-theme="light">☀️</button><button class="theme-btn' + (theme === 'neon' ? ' active' : '') + '" data-theme="neon">💜</button></div></div>';
+    document.getElementById('skinsSection').innerHTML = sh;
+    var sbtns = document.querySelectorAll('#skinsSection .skin-btn:not([disabled])');
+    for (var sj = 0; sj < sbtns.length; sj++) { sbtns[sj].onclick = function() { if (checkBanAndRedirect()) return; skin = this.getAttribute('data-skin'); document.getElementById('clickButton').textContent = skin; saveLocal(); saveCloud(); updateUI(); updateProfileSection(); }; }
+    var tbtns = document.querySelectorAll('#skinsSection .theme-btn');
+    for (var tj = 0; tj < tbtns.length; tj++) { tbtns[tj].onclick = function() { if (checkBanAndRedirect()) return; theme = this.getAttribute('data-theme'); applyTheme(); saveLocal(); saveCloud(); updateUI(); updateProfileSection(); }; }
+    updateProfileSection();
+}
+function switchTab(t) {
+    var tabs = ['tabShop','tabPotions','tabRebirth','tabSkins','tabLeaderboard','tabProfile','tabNotif','tabBug','tabSocial','tabClan','tabInfo'];
+    var secs = ['shopSection','potionsSection','rebirthSection','skinsSection','leaderboardSection','profileSection','notifSection','bugSection','socialSection','clanSection','infoSection'];
+    for (var i = 0; i < tabs.length; i++) { document.getElementById(tabs[i]).classList.remove('active'); document.getElementById(secs[i]).classList.remove('active'); }
+    if (t === 'shop') { document.getElementById('tabShop').classList.add('active'); document.getElementById('shopSection').classList.add('active'); }
+    else if (t === 'potions') { document.getElementById('tabPotions').classList.add('active'); document.getElementById('potionsSection').classList.add('active'); }
+    else if (t === 'rebirth') { document.getElementById('tabRebirth').classList.add('active'); document.getElementById('rebirthSection').classList.add('active'); }
+    else if (t === 'skins') { document.getElementById('tabSkins').classList.add('active'); document.getElementById('skinsSection').classList.add('active'); }
+    else if (t === 'leaderboard') { document.getElementById('tabLeaderboard').classList.add('active'); document.getElementById('leaderboardSection').classList.add('active'); loadLB(); }
+    else if (t === 'profile') { document.getElementById('tabProfile').classList.add('active'); document.getElementById('profileSection').classList.add('active'); updateProfileSection(); }
+    else if (t === 'notif') { document.getElementById('tabNotif').classList.add('active'); document.getElementById('notifSection').classList.add('active'); renderNotifSection(); }
+    else if (t === 'bug') { document.getElementById('tabBug').classList.add('active'); document.getElementById('bugSection').classList.add('active'); renderBugSection(); }
+    else if (t === 'social') { document.getElementById('tabSocial').classList.add('active'); document.getElementById('socialSection').classList.add('active'); renderSocialSection(); }
+    else if (t === 'clan') { document.getElementById('tabClan').classList.add('active'); document.getElementById('clanSection').classList.add('active'); renderClanSection(); }
+    else { document.getElementById('tabInfo').classList.add('active'); document.getElementById('infoSection').classList.add('active'); }
+    updateUI();
+}
+var infoHtml = '<div style="text-align:center;padding:20px"><div style="font-size:50px">ℹ️</div><div style="font-size:18px;font-weight:700">NetClicker</div><div style="color:#667eea;font-size:24px;font-weight:800">v' + APP_VERSION + '</div><div style="margin-top:15px;text-align:left"><div style="font-weight:700;margin-bottom:5px">🆕 Что нового:</div>';
+for (var ci = 0; ci < CHANGELOG.length; ci++) infoHtml += '<div style="padding:5px 0;border-bottom:1px solid #222">• ' + CHANGELOG[ci] + '</div>';
+infoHtml += '</div><button class="btn btn-buy" style="margin-top:15px;width:100%" onclick="showAgreement()">📜 Соглашение</button></div>';
+document.getElementById('infoSection').innerHTML = infoHtml;
+
+// Обработчики
+document.getElementById('clickButton').addEventListener('click', function(e) { e.preventDefault(); if (checkBanAndRedirect()) return; if (!checkAntiCheat()) return; comboC++; comboT = 1.5; if (comboC >= 100) comboM = 5; else if (comboC >= 50) comboM = 3; else if (comboC >= 20) comboM = 2; else if (comboC >= 10) comboM = 1.5; else comboM = 1; var ev = eClick() * eMult(); coins += ev; earned += ev; clicks++; var rect = this.getBoundingClientRect(), cx = e.clientX - rect.left, cy = e.clientY - rect.top; var el = document.createElement('div'); el.className = 'float-text'; el.textContent = '+' + ev.toFixed(0); el.style.left = (cx - 30) + 'px'; el.style.top = (cy - 40) + 'px'; document.getElementById('clickerArea').appendChild(el); setTimeout(function() { el.remove(); }, 1000); spawnParticles(cx, cy, comboC >= 20 ? 15 : 8); var ripple = document.createElement('div'); ripple.className = 'ripple'; ripple.style.left = (cx - 25) + 'px'; ripple.style.top = (cy - 25) + 'px'; document.getElementById('clickerArea').appendChild(ripple); setTimeout(function() { ripple.remove(); }, 600); saveLocal(); saveCloud(); updateUI(); });
+document.getElementById('tabShop').onclick = function() { if (checkBanAndRedirect()) return; switchTab('shop'); };
+document.getElementById('tabPotions').onclick = function() { if (checkBanAndRedirect()) return; switchTab('potions'); };
+document.getElementById('tabRebirth').onclick = function() { if (checkBanAndRedirect()) return; switchTab('rebirth'); };
+document.getElementById('tabSkins').onclick = function() { if (checkBanAndRedirect()) return; switchTab('skins'); };
+document.getElementById('tabLeaderboard').onclick = function() { if (checkBanAndRedirect()) return; switchTab('leaderboard'); };
+document.getElementById('tabProfile').onclick = function() { if (checkBanAndRedirect()) return; switchTab('profile'); };
+document.getElementById('tabNotif').onclick = function() { if (checkBanAndRedirect()) return; switchTab('notif'); };
+document.getElementById('tabBug').onclick = function() { if (checkBanAndRedirect()) return; switchTab('bug'); };
+document.getElementById('tabSocial').onclick = function() { if (checkBanAndRedirect()) return; switchTab('social'); };
+document.getElementById('tabClan').onclick = function() { if (checkBanAndRedirect()) return; switchTab('clan'); };
+document.getElementById('tabInfo').onclick = function() { if (checkBanAndRedirect()) return; switchTab('info'); };
+document.getElementById('saveBtn').onclick = function() { if (checkBanAndRedirect()) return; document.getElementById('saveCodeText').value = JSON.stringify(getSaveData()); document.getElementById('saveOverlay').classList.add('show'); };
+document.getElementById('loadBtn').onclick = function() { if (checkBanAndRedirect()) return; document.getElementById('loadCodeText').value = ''; document.getElementById('loadOverlay').classList.add('show'); };
+document.getElementById('copySaveBtn').onclick = function() { document.getElementById('saveCodeText').select(); document.execCommand('copy'); msg('Скопировано'); };
+document.getElementById('confirmLoadBtn').onclick = function() { if (checkBanAndRedirect()) return; var c = document.getElementById('loadCodeText').value; if (c) { loadData(JSON.parse(c)); saveLocal(); saveCloud(); hideOverlay(); updateUI(); msg('Загружено!'); } };
+document.getElementById('resetBtn').onclick = function() { if (checkBanAndRedirect()) return; doReset(); };
+document.getElementById('confirmDeleteBtn').onclick = function() { if (checkBanAndRedirect()) return; deleteAccount(); };
+
+setInterval(function() { if (comboT > 0) { comboT -= 0.1; if (comboT <= 0) { comboC = 0; comboM = 1; updateUI(); } } }, 100);
+setInterval(function() { if (!isBanned && user) { var c = false; for (var k in potions) { if (potions[k].a) { potions[k].t -= 1; if (potions[k].t <= 0) { potions[k].a = false; potions[k].t = 0; c = true; } } } if (c) updateUI(); } }, 1000);
+setInterval(function() { if (cps > 0 && !isBanned && user) { var autoIncome = eCPS() * eMult(); coins += autoIncome; earned += autoIncome; updateUI(); } }, 1000);
+setInterval(async function() { await checkEventStatus(); await checkGlobalMessage(); }, 5000);
+setInterval(function() { if (user && user.email) { loadNotifsInBackground(); } }, 30000);
+
+maxClicksPerSecond = parseInt(localStorage.getItem('maxClicksPerSecond') || '20');
+setTimeout(function() { updateUI(); renderNotifSection(); renderBugSection(); updateTopBar(); }, 500);
+</script>
+</body>
+</html>
+</body>
+</html>
